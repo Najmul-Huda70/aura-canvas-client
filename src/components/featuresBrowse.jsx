@@ -15,6 +15,7 @@ import {
   LayoutGrid,
   Filter,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest first" },
@@ -156,6 +157,7 @@ function ArtworkCard({ artwork, index, onArtistClick, onCardClick }) {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 export default function BrowseArtworks() {
+  const router=useRouter();
   const [artworks, setArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -230,6 +232,8 @@ export default function BrowseArtworks() {
 
   const handleCardClick = (artwork) => {
     console.log("Navigate to artwork:", artwork._id);
+    router.push(`/artwork/${artwork._id}`);
+   
   };
 
   const handleArtistClick = (artistId, name) => {
