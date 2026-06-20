@@ -6,11 +6,13 @@ import {
   LayoutGrid, PlusCircle, Settings, LogOut,
   Palette, ChevronRight, Edit3, Trash2,
   Upload, X, CheckCircle, XCircle, Loader2,
-  History, ImageIcon
+  History, ImageIcon, RotateCcw
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
+import AddArtwork from "./AddArtwork";
 
-const IMGBB_API_KEY = "YOUR_IMGBB_API_KEY"; 
+const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMGBB_API;
 const CATEGORIES = ["Landscape", "Abstract", "Watercolor", "Oil", "Portrait", "Digital", "Sculpture", "Photography"];
 
 const SALES_HISTORY = [
@@ -72,7 +74,7 @@ async function uploadToImgBB(file) {
   return data.data.url;
 }
 
-function ImageUploadZone({ onUpload, previewUrl, setPreviewUrl }) {
+export function ImageUploadZone({ onUpload, previewUrl, setPreviewUrl }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [progress, setProgress] = useState(0);
@@ -80,16 +82,28 @@ function ImageUploadZone({ onUpload, previewUrl, setPreviewUrl }) {
 
   async function handleFile(file) {
     if (!file) return;
-    if (!file.type.startsWith("image/")) { setUploadError("Only image files allowed."); return; }
+    if (!file.type.startsWith("image/")) { 
+      setUploadError("Only image files allowed."); 
+      return; 
+    }
+    
     setUploadError("");
     setUploading(true);
     setProgress(0);
+    
     const interval = setInterval(() => setProgress(p => Math.min(p + 15, 90)), 150);
+    
     try {
       const url = await uploadToImgBB(file);
       clearInterval(interval);
       setProgress(100);
-      setTimeout(() => { setUploading(false); setPreviewUrl(url); onUpload(url); }, 300);
+      
+      setTimeout(() => { 
+        setUploading(false); 
+        setPreviewUrl(url); 
+        onUpload(url); 
+      }, 300);
+      
     } catch (err) {
       clearInterval(interval);
       setUploading(false);
@@ -98,79 +112,92 @@ function ImageUploadZone({ onUpload, previewUrl, setPreviewUrl }) {
   }
 
   return (
-    <div>
+    <div className="relative">
       <div
-        onClick={() => !uploading && inputRef.current?.click()}
-        className={`relative rounded-xl border border-dashed transition-all duration-200 cursor-pointer overflow-hidden bg-[#070B13] ${
-          previewUrl ? "border-[#C5A880]/40" : "border-gray-800 hover:border-gray-700"
+        className={`relative rounded-xl border border-dashed transition-all duration-200 cursor-default overflow-hidden bg-[#070B13] ${
+          previewUrl ? "border-[#C5A880]/40" : "border-gray-800 hover:border-gray-700 cursor-pointer"
         }`}
         style={{ minHeight: 140 }}
+        onClick={() => !previewUrl && !uploading && inputRef.current?.click()}
       >
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFile(e.target.files?.[0])} />
+        
         <AnimatePresence mode="wait">
           {previewUrl ? (
-            <motion.div key="preview" className="relative">
-              <img src={previewUrl} alt="preview" className="w-full h-40 object-cover" />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                <span className="text-white text-xs">Change Image</span>
+            <motion.div key="preview" className="relative group">
+              <img src={previewUrl} alt="artwork" className="w-full h-40 object-cover" />
+              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2.5">
+                <button 
+                  type="button" 
+                  onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#C5A880]/20 border border-[#C5A880]/40 rounded-full text-xs font-semibold text-[#C5A880]"
+                >
+                  <RotateCcw size={12} /> Change Image
+                </button>
               </div>
             </motion.div>
           ) : uploading ? (
-            <div className="flex flex-col items-center justify-center h-40 gap-2">
+            <motion.div key="loading" className="flex flex-col items-center justify-center h-40 gap-3">
               <Loader2 size={24} className="text-[#C5A880] animate-spin" />
-              <p className="text-xs text-gray-400">Uploading ({progress}%)</p>
-            </div>
+              <div className="text-center">
+                <p className="text-xs font-semibold text-gray-200">Uploading Piece ({progress}%)</p>
+              </div>
+              <div className="w-24 h-0.5 bg-gray-800 rounded-full overflow-hidden mt-1">
+                <div className="h-full bg-[#C5A880]" style={{ width: `${progress}%` }} />
+              </div>
+            </motion.div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-40 gap-2">
-              <Upload size={20} className="text-gray-600" />
-              <p className="text-xs text-gray-400">Click or drag image here</p>
-            </div>
+            <motion.div key="empty" className="flex flex-col items-center justify-center h-40 gap-2.5 text-center px-4">
+              <div className="w-12 h-12 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-gray-600">
+                <ImageIcon size={22} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-300">Click or Drag & Drop Image</p>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
-      {uploadError && <p className="text-xs text-rose-400 mt-1">{uploadError}</p>}
+
+      {uploadError && (
+        <p className="text-xs text-rose-400 mt-1">{uploadError}</p>
+      )}
     </div>
   );
 }
 
-function ArtworkForm({ initial = null, onSubmit, onCancel, submitLabel = "Publish Artwork" }) {
+function ArtworkForm({ initial, onSubmit, onCancel, submitLabel }) {
   const [title, setTitle]       = useState(initial?.title || "");
   const [desc, setDesc]         = useState(initial?.description || "");
   const [price, setPrice]       = useState(initial?.price || "");
   const [category, setCategory] = useState(initial?.category || "");
-  const [imageUrl, setImageUrl] = useState(initial?.imageUrl || ""); 
-  const [previewUrl, setPreviewUrl] = useState(initial?.imageUrl || "");
-  const [errors, setErrors]     = useState({});
+  const [imageUrl, setImageUrl] = useState(initial?.imageUrl || "");
+
+  const inputClass = "w-full bg-[#070B13] border border-gray-800/80 focus:border-[#C5A880]/40 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none transition-colors";
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!title.trim() || !price || !category || !imageUrl) {
-      setErrors({ general: "Please fill all required fields" });
-      return;
-    }
+    if (!title.trim() || !price || !category || !imageUrl) return;
     onSubmit({ title, description: desc, price: Number(price), category, imageUrl });
   }
 
-  const inputClass = "w-full bg-[#070B13] border border-gray-800/80 focus:border-[#C5A880]/40 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition-colors";
-  const labelClass = "block text-[11px] text-gray-400 mb-1.5";
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 text-left">
       <div>
-        <label className={labelClass}>Artwork Title</label>
-        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter title" className={inputClass} />
+        <label className="block text-[11px] text-gray-400 mb-1.5">Artwork Title</label>
+        <input value={title} onChange={e => setTitle(e.target.value)} className={inputClass} />
       </div>
       <div>
-        <label className={labelClass}>Description</label>
-        <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} placeholder="Describe your piece" className={inputClass + " resize-none"} />
+        <label className="block text-[11px] text-gray-400 mb-1.5">Description</label>
+        <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} className={`${inputClass} resize-none`} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelClass}>Price ($ USD)</label>
-          <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="Price" className={inputClass} />
+          <label className="block text-[11px] text-gray-400 mb-1.5">Price ($ USD)</label>
+          <input type="number" value={price} onChange={e => setPrice(e.target.value)} className={inputClass} />
         </div>
         <div>
-          <label className={labelClass}>Category</label>
+          <label className="block text-[11px] text-gray-400 mb-1.5">Category</label>
           <select value={category} onChange={e => setCategory(e.target.value)} className={inputClass}>
             <option value="">Select Category</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -178,19 +205,16 @@ function ArtworkForm({ initial = null, onSubmit, onCancel, submitLabel = "Publis
         </div>
       </div>
       <div>
-        <label className={labelClass}>Upload Image</label>
-        <ImageUploadZone onUpload={setImageUrl} previewUrl={previewUrl} setPreviewUrl={setPreviewUrl} />
+        <label className="block text-[11px] text-gray-400 mb-1.5">Upload Image</label>
+        <ImageUploadZone onUpload={setImageUrl} previewUrl={imageUrl} setPreviewUrl={setImageUrl} />
       </div>
-      {errors.general && <p className="text-xs text-rose-400">{errors.general}</p>}
       <div className="flex items-center gap-3 pt-2">
         <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#C5A880] text-[#070B13] text-xs font-semibold hover:bg-[#bfa075] transition-colors">
           {submitLabel}
         </button>
-        {onCancel && (
-          <button type="button" onClick={onCancel} className="px-5 py-2.5 rounded-xl border border-gray-800 text-gray-400 text-xs hover:bg-gray-800/30">
-            Cancel
-          </button>
-        )}
+        <button type="button" onClick={onCancel} className="px-5 py-2.5 rounded-xl border border-gray-800 text-gray-400 text-xs hover:bg-gray-800/30">
+          Cancel
+        </button>
       </div>
     </form>
   );
@@ -201,7 +225,7 @@ function DeleteModal({ title, onConfirm, onCancel }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div className="bg-[#090E17] border border-gray-800 rounded-xl p-5 w-full max-w-xs text-center shadow-xl">
         <p className="text-sm font-semibold text-gray-200">Delete Artwork?</p>
-        <p className="text-xs text-gray-500 mt-1">Are you sure you want to delete "{title}"?</p>
+        <p className="text-xs text-gray-500 mt-1">Are you sure you want to delete `{title}`?</p>
         <div className="flex gap-2 mt-4">
           <button onClick={onConfirm} className="flex-1 py-2 rounded-lg bg-rose-600 text-white text-xs font-medium">Delete</button>
           <button onClick={onCancel} className="flex-1 py-2 rounded-lg border border-gray-800 text-gray-400 text-xs">Cancel</button>
@@ -211,10 +235,36 @@ function DeleteModal({ title, onConfirm, onCancel }) {
   );
 }
 
-// ─── Page: My Artworks ────────────────────────────────────────────────────────
 function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleEditSubmit = async (updatedData) => {
+    try {
+      setIsUpdating(true);
+      const res = await fetch(`${BASE_URL}/artworks/${editTarget._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+
+      const resData = await res.json();
+
+      if (res.ok && resData.success) {
+        setArtworks(p => p.map(a => a._id === editTarget._id ? { ...a, ...updatedData } : a));
+        showToast("Artwork updated successfully!");
+        setEditTarget(null); 
+      } else {
+        showToast(resData.message || "Failed to update artwork", "error");
+      }
+    } catch (error) {
+      console.error("Update error:", error);
+      showToast("Server error. Could not update.", "error");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
@@ -224,17 +274,29 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
       </div>
 
       <AnimatePresence mode="wait">
-        {editTarget ? (
-          <motion.div key="edit" className="border border-gray-800 bg-[#090E17]/60 p-5 rounded-xl">
-            <ArtworkForm initial={editTarget} onSubmit={(upd) => {
-              setArtworks(p => p.map(a => a._id === editTarget._id ? {...a, ...upd} : a));
-              setEditTarget(null);
-              showToast("Artwork updated");
-            }} onCancel={() => setEditTarget(null)} submitLabel="Save Changes" />
+       {editTarget ? (
+          <motion.div 
+            key="edit-mode" 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -10 }}
+            className="border border-gray-800 bg-[#090E17]/60 p-5 rounded-xl"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-medium text-[#C5A880]">Edit Artwork: {editTarget.title}</h3>
+              <button onClick={() => setEditTarget(null)} className="text-xs text-gray-500 hover:text-gray-300">Cancel</button>
+            </div>
+            
+           <ArtworkForm 
+              initial={editTarget} 
+              onSubmit={handleEditSubmit} 
+              onCancel={() => setEditTarget(null)} 
+              submitLabel={isUpdating ? "Saving..." : "Save Changes"} 
+            />
           </motion.div>
         ) : artworks.length === 0 ? (
-          /* ─── EMPTY STATE CREATED HERE ─── */
           <motion.div 
+            key="empty"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="border border-gray-800/60 rounded-xl bg-[#090E17]/20 p-12 flex flex-col items-center justify-center text-center min-h-[340px]"
@@ -243,7 +305,6 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
               <ImageIcon size={24} />
             </div>
             <h3 className="text-sm font-semibold text-gray-300">No Artworks Found</h3>
-            <p className="text-xs text-gray-500 max-w-xs mt-1 mb-5">You haven't listed any art pieces in your gallery yet. Start publishing your work.</p>
             <button 
               onClick={() => setActiveTab("add")}
               className="flex items-center gap-2 px-4 py-2 bg-[#C5A880]/10 border border-[#C5A880]/20 rounded-xl text-xs font-semibold text-[#C5A880] hover:bg-[#C5A880]/20 transition-all"
@@ -252,7 +313,7 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
             </button>
           </motion.div>
         ) : (
-          <motion.div key="table" className="border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden">
+         <motion.div key="table" className="border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden">
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-gray-800/60 bg-[#070B13]/40 text-[11px] text-gray-500 uppercase tracking-wider">
@@ -274,9 +335,9 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
                     <td className="p-4 text-[#C5A880] font-semibold">${art.price.toLocaleString()}</td>
                     <td className="p-4">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border ${
-                        art.status === 'active' ? 'bg-emerald-950/30 border-emerald-500/20 text-emerald-400' : 'bg-amber-950/30 border-amber-500/20 text-amber-400'
+                        art.status === 'available' ? 'bg-emerald-950/30 border-emerald-500/20 text-emerald-400' : 'bg-amber-950/30 border-amber-500/20 text-amber-400'
                       }`}>
-                        {art.status === 'active' ? 'Active' : 'Sold'}
+                        {art.status || 'available'}
                       </span>
                     </td>
                     <td className="p-4 text-right">
@@ -292,35 +353,34 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
           </motion.div>
         )}
       </AnimatePresence>
-      {deleteTarget && <DeleteModal title={deleteTarget.title} onCancel={() => setDeleteTarget(null)} onConfirm={() => {
-        setArtworks(p => p.filter(a => a._id !== deleteTarget._id));
-        setDeleteTarget(null);
-        showToast("Artwork removed");
-      }} />}
+
+      {deleteTarget && (
+        <DeleteModal 
+          title={deleteTarget.title} 
+          onCancel={() => setDeleteTarget(null)} 
+          onConfirm={async() => {
+            try {        
+              const res = await fetch(`${BASE_URL}/artworks/${deleteTarget._id}`, { method: "DELETE" });
+              const resData = await res.json();
+              if (res.ok && resData.success) {
+                setArtworks(p => p.filter(a => a._id !== deleteTarget._id));
+                showToast("Artwork permanently deleted");
+              } else {
+                showToast(resData.message || "Failed to delete", "error");
+              }
+            } catch (error) {
+              console.error(error);
+              showToast("Server error", "error");
+            } finally {
+              setDeleteTarget(null);
+            }
+          }} 
+        />
+      )}
     </motion.div>
   );
 }
 
-// ─── Page: Add Artwork ────────────────────────────────────────────────────────
-function AddArtwork({ setArtworks, setActiveTab, showToast }) {
-  return (
-    <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6 max-w-xl">
-      <div>
-        <h2 className="text-xl font-medium text-gray-100">Add New Artwork</h2>
-        <p className="text-xs text-gray-500">Publish your latest masterpiece to the marketplace</p>
-      </div>
-      <div className="border border-gray-800 bg-[#090E17]/50 p-5 rounded-xl">
-        <ArtworkForm onSubmit={(data) => {
-          setArtworks(p => [{ _id: `a_${Date.now()}`, ...data, status: "active" }, ...p]);
-          showToast("Artwork successfully published!");
-          setActiveTab("artworks");
-        }} />
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Page: Sales History ──────────────────────────────────────────────────────
 function SalesHistory() {
   return (
     <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
@@ -358,7 +418,6 @@ function SalesHistory() {
   );
 }
 
-// ─── Page: Profile Settings ───────────────────────────────────────────────────
 function ProfileSettings({ showToast }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -386,8 +445,7 @@ function ProfileSettings({ showToast }) {
     </motion.div>
   );
 }
-const SERVER_URL=process.env.NEXT_PUBLIC_SERVER_URL;
-// ─── Main ArtistDashboard Component ─────────────────
+
 export default function ArtistDashboard() {
   const [activeTab, setActiveTab] = useState("artworks");
   const [artworks, setArtworks] = useState([]);
@@ -403,9 +461,9 @@ export default function ArtistDashboard() {
       if (!userId) return;
       try {
         setLoading(true);
-        const res = await fetch(`${SERVER_URL}/artworks?id=${userId}`);
+        const res = await fetch(`${BASE_URL}/artworks?userId=${userId}`);
         const resData = await res.json();
-        if (resData && resData.data) {
+        if (resData && resData.success && resData.data) {
           setArtworks(resData.data);
         } else {
           setArtworks([]);
@@ -432,8 +490,6 @@ export default function ArtistDashboard() {
 
   return (
     <div className="min-h-screen mt-20 bg-[#070B13] text-gray-100 flex flex-col md:flex-row p-4 md:p-6 gap-6 font-sans">
-      
-      {/* ─── LEFT SIDEBAR ─── */}
       <aside className="w-full md:w-65 flex flex-col gap-4 shrink-0">
         <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-5 flex flex-col items-center text-center shadow-lg relative overflow-hidden">
           <div className="relative mt-2">
@@ -487,17 +543,9 @@ export default function ArtistDashboard() {
             })}
           </nav>
         </div>
-
-        <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-2 shadow-lg">
-          <button className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-rose-400/90 hover:bg-rose-950/20 hover:text-rose-400 transition-colors group">
-            <LogOut size={14} className="text-rose-400/60 group-hover:text-rose-400" />
-            Sign out
-          </button>
-        </div>
       </aside>
 
-      {/* ─── RIGHT MAIN PANEL ─── */}
-      <main className="flex-1 bg-[#090E17]/40 border border-gray-800/50 rounded-2xl p-5 md:p-6 shadow-xl overflow-x-hidden min-h-[500px] flex flex-col">
+      <main className="flex-1 p-5 md:p-6 overflow-x-hidden min-h-255 flex flex-col">
         {loading ? (
           <div className="flex-1 flex items-center justify-center text-gray-500 text-xs gap-2">
             <Loader2 className="animate-spin text-[#C5A880]" size={16} /> Loading assets...
@@ -509,7 +557,7 @@ export default function ArtistDashboard() {
                 <MyArtworks artworks={artworks} setArtworks={setArtworks} setActiveTab={setActiveTab} showToast={showToast} />
               )}
               {activeTab === "add" && (
-                <AddArtwork setArtworks={setArtworks} setActiveTab={setActiveTab} showToast={showToast} />
+                <AddArtwork setArtworks={setArtworks} setActiveTab={setActiveTab} showToast={showToast} userId={userId}/>
               )}
               {activeTab === "sales" && <SalesHistory />}
               {activeTab === "settings" && <ProfileSettings showToast={showToast} />}

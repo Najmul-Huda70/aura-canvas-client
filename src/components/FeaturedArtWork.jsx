@@ -127,13 +127,14 @@ function ArtworkCard({ artwork }) {
             <Calendar size={10} />
             {formattedDate}
           </span>
+          <Link href={`/artwork/${artwork._id}`}>
           <motion.span
             className="inline-flex items-center gap-1 text-[10px] text-[#C5A880] font-sans font-medium uppercase tracking-wider"
             whileHover={{ x: 3 }}
             transition={{ duration: 0.2 }}
           >
             View <ArrowRight size={10} />
-          </motion.span>
+          </motion.span></Link>
         </div>
       </div>
     </motion.div>
@@ -157,7 +158,7 @@ function normalizeResponse(data) {
   const firstArr = Object.values(data).find((v) => Array.isArray(v));
   return firstArr ?? [];
 }
-
+const BASE_URL=process.env.NEXT_PUBLIC_SERVER_URL;
 // ── Main component ────────────────────────────────────────────────
 export default function FeaturedArtworks() {
   const [artworks, setArtworks] = useState([]);
@@ -169,7 +170,7 @@ export default function FeaturedArtworks() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("http://localhost:3001/features", {
+        const res = await fetch(`${BASE_URL}/artworks?features=true`, {
           cache: "no-store", // always fresh on reload
         });
 

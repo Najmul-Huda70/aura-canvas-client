@@ -107,7 +107,7 @@ function ArtworkCard({ artwork, index, onArtistClick, onCardClick }) {
         <div className="absolute top-3 left-3 z-10">
           <span className="inline-flex items-center gap-1 text-[10px] font-sans uppercase tracking-wider font-medium px-2.5 py-1 rounded-sm bg-[#0B0F19]/80 text-[#C5A880] backdrop-blur-md border border-[#C5A880]/20">
             <Tag size={9} />
-            {artwork.category}
+            {artwork.category} {artwork.features && "• Featured"}
           </span>
         </div>
 
@@ -157,7 +157,7 @@ function ArtworkCard({ artwork, index, onArtistClick, onCardClick }) {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 export default function BrowseArtworks() {
-  const router=useRouter();
+  const router = useRouter();
   const [artworks, setArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -173,20 +173,25 @@ export default function BrowseArtworks() {
     async function fetchArtworks() {
       setLoading(true);
       try {
-        const res = await fetch(`${BASE_URL}/features`);
+        const res = await fetch(`${BASE_URL}/artworks`);
         if (!res.ok) throw new Error("Server error handling request");
-        const data = await res.json();
-        setArtworks(Array.isArray(data) ? data : MOCK_ARTWORKS);
+        const resData = await res.json();
+
+        // ব্যাকএন্ডের নতুন ফরম্যাট (resData.success && resData.data) অনুযায়ী ডেটা সেট করা হচ্ছে
+        if (resData && resData.success && Array.isArray(resData.data)) {
+          setArtworks(resData.data);
+        } else {
+          setArtworks([]);
+        }
       } catch (error) {
-        console.error("Using local fallback datasets:", error);
-        setArtworks(MOCK_ARTWORKS);
+        console.error("Error fetching data from server:", error);
+        setArtworks([]); // সার্ভার ডাউন থাকলে বা এরর হলে খালি অ্যারে সেট করবে
       } finally {
         setTimeout(() => setLoading(false), 500);
       }
     }
     fetchArtworks();
   }, []);
-
   useEffect(() => {
     if (artworks.length) {
       const max = Math.max(...artworks.map((a) => a.price));
@@ -233,7 +238,6 @@ export default function BrowseArtworks() {
   const handleCardClick = (artwork) => {
     console.log("Navigate to artwork:", artwork._id);
     router.push(`/artwork/${artwork._id}`);
-   
   };
 
   const handleArtistClick = (artistId, name) => {
@@ -470,7 +474,7 @@ export default function BrowseArtworks() {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", stiffness: 320, damping: 28 }}
-               className="fixed left-0 top-14 bottom-0 w-72 h-[calc(100vh-56px)] bg-[#111827] border-r border-gray-800/60 z-50 p-5 shadow-2xl overflow-y-auto lg:hidden"
+                className="fixed left-0 top-14 bottom-0 w-72 h-[calc(100vh-56px)] bg-[#111827] border-r border-gray-800/60 z-50 p-5 shadow-2xl overflow-y-auto lg:hidden"
               >
                 <div className="flex items-center justify-between mt-6 mb-6 pb-2 border-b border-gray-800/40">
                   <span className="font-serif font-medium text-white">

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   User,
@@ -44,7 +44,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 export default function ArtworkDetails() {
   const resolvedParams = useParams();
   const id = resolvedParams?.id;
-
   const router = useRouter();
   
   const [artwork, setArtwork] = useState(null);
@@ -63,13 +62,14 @@ export default function ArtworkDetails() {
   const [newComment, setNewComment] = useState("");
   const [newRating, setNewRating] = useState(5);
 
-useEffect(() => {
+  // ─── ১. ডেটা ফেচিং লজিক ফিক্স (সাকসেস ও অ্যারে ইনডেক্স চেক) ───────────────────
+  useEffect(() => {
     if (!id) return;
 
     const fetchArtworkData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${BASE_URL}/features?id=${id}`, {
+        const res = await fetch(`${BASE_URL}/artworks?id=${id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -81,13 +81,14 @@ useEffect(() => {
           return;
         }
         
-        const data = await res.json();
+        const resData = await res.json();
         
-        if (!data || Object.keys(data).length === 0) {
-          setNotFound(true);
-        } else {
-          setArtwork(data);
+        // ব্যাকএন্ডের { success: true, data: [...] } ফরম্যাট ফিল্টার করা হচ্ছে
+        if (resData && resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
+          setArtwork(resData.data[0]); // অ্যারের প্রথম অবজেক্টটি নেওয়া হলো
           setNotFound(false);
+        } else {
+          setNotFound(true);
         }
       } catch (error) {
         console.error("Failed to fetch artwork:", error);
@@ -99,7 +100,7 @@ useEffect(() => {
 
     fetchArtworkData();
   }, [id]);
-console.log('artwork: ',artwork);
+
   const user = MOCK_USER;
   const isLoggedIn = user.role !== "guest";
   const isOwner = user.role === "artist" && user.artistId === artwork?.artistId;
@@ -133,7 +134,6 @@ console.log('artwork: ',artwork);
     setNewRating(5);
   };
 
-  // ১. লোডিং স্ক্রিন স্টেট হোয়াইল ফেচিং ডাটা
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
@@ -145,7 +145,6 @@ console.log('artwork: ',artwork);
     );
   }
 
-  // ২. নট ফাউন্ড স্ক্রিন
   if (notFound || !artwork) {
     return (
       <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center px-4">
@@ -163,7 +162,6 @@ console.log('artwork: ',artwork);
   return (
     <div className="min-h-screen bg-[#0B0F19] text-gray-100 font-sans antialiased selection:bg-[#C5A880]/30">
       
-      {/* Upper Navbar Space */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-4">
         <button
           onClick={() => router.back()}
@@ -174,10 +172,9 @@ console.log('artwork: ',artwork);
         </button>
       </div>
 
-      {/* Main Grid Product Details */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-5 items-start">
         
-        {/* ── LEFT: IMAGE PANEL (Perfect Size & Fit Fixes) ── */}
+        {/* LEFT: IMAGE PANEL */}
         <div className="lg:col-span-7 space-y-4 lg:h-[calc(100vh-180px)] lg:sticky lg:top-24"> 
           <div className="relative rounded-xl overflow-hidden h-full aspect-7/8 max-h-[600px] lg:max-h-full bg-[#111827] border border-gray-800/60 shadow-2xl mx-auto">
             <motion.img
@@ -189,7 +186,8 @@ console.log('artwork: ',artwork);
               animate={{ opacity: imgLoaded ? 1 : 0 }}
               transition={{ duration: 0.5 }}
             />
-            {artwork.featured && (
+            {/* ─── ২. প্রোপার্টির নাম ফিক্স: artwork.featured থেকে artwork.features করা হলো ─── */}
+            {artwork.features && (
               <div className="absolute top-4 right-4 flex items-center gap-1 bg-[#C5A880] text-[#0B0F19] text-[10px] uppercase font-bold px-2.5 py-1 rounded-sm tracking-wider shadow-lg">
                 <Star size={10} fill="currentColor" />
                 Featured Piece
@@ -198,7 +196,7 @@ console.log('artwork: ',artwork);
           </div>
         </div>
 
-        {/* ── RIGHT: LUXURY METADATA PANEL ── */}
+        {/* RIGHT: METADATA PANEL */}
         <div className="lg:col-span-5 flex flex-col gap-6">
           <div>
             <div className="flex items-center gap-3 mb-3">
@@ -235,7 +233,6 @@ console.log('artwork: ',artwork);
             </p>
           </div>
 
-          {/* Core Info Badges Mini Block */}
           <div className="grid grid-cols-2 gap-4 bg-[#111827]/40 border border-gray-800/40 p-4 rounded-xl">
             <div>
               <span className="text-[10px] uppercase tracking-wider text-gray-500 block">Catalog Style</span>
@@ -249,7 +246,6 @@ console.log('artwork: ',artwork);
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="mt-2">
             {isOwner && (
               <div className="flex gap-3">
@@ -293,7 +289,7 @@ console.log('artwork: ',artwork);
         </div>
       </div>
 
-      {/* ── BOTTOM: REVIEWS & DISCUSSION SECTION ── */}
+      {/* REVIEWS SECTION */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 mt-12 border-t border-gray-800/60">
         <div className="max-w-3xl">
           <div className="flex items-center gap-2 mb-8">
@@ -302,12 +298,10 @@ console.log('artwork: ',artwork);
             <span className="text-xs bg-gray-800 px-2 py-0.5 rounded-full text-gray-400">{reviews.length}</span>
           </div>
 
-          {/* Write a Review Form */}
           {isLoggedIn ? (
             <form onSubmit={handleAddReview} className="bg-[#111827]/40 border border-gray-800/60 p-5 rounded-xl mb-10">
               <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-3">Share your perspective</p>
               
-              {/* Star Selection */}
               <div className="flex items-center gap-1.5 mb-4">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -322,7 +316,6 @@ console.log('artwork: ',artwork);
                 <span className="text-xs text-gray-400 ml-2">({newRating} out of 5)</span>
               </div>
 
-              {/* Input field */}
               <div className="relative">
                 <textarea
                   rows={3}
@@ -345,7 +338,6 @@ console.log('artwork: ',artwork);
             </div>
           )}
 
-          {/* Reviews List */}
           <div className="space-y-6">
             {reviews.map((rev) => (
               <div key={rev.id} className="border-b border-gray-800/40 pb-6 last:border-0">
