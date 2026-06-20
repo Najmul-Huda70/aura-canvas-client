@@ -1,42 +1,23 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutGrid, PlusCircle, Receipt, Settings, LogOut,
-  Palette, ChevronRight, Check, Edit3, Trash2,
-  Camera, ExternalLink, TrendingUp, DollarSign,
-  Eye, EyeOff, AlertCircle, Upload, X, Star,
-  CheckCircle, XCircle, Loader2, Image as ImageIcon,
-  History, Heart, MessageSquare, CreditCard
+  LayoutGrid, PlusCircle, Settings, LogOut,
+  Palette, ChevronRight, Edit3, Trash2,
+  Upload, X, CheckCircle, XCircle, Loader2,
+  History, ImageIcon
 } from "lucide-react";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_ARTIST = {
-  name: "Robin",
-  email: "robin@gmail.com",
-  avatar: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200",
-  artworkCount: 4,
-  totalEarned: 3200,
-  currentPassword: "password123",
-};
+import { useSession } from "@/lib/auth-client";
 
 const IMGBB_API_KEY = "YOUR_IMGBB_API_KEY"; 
 const CATEGORIES = ["Landscape", "Abstract", "Watercolor", "Oil", "Portrait", "Digital", "Sculpture", "Photography"];
-
-const INITIAL_ARTWORKS = [
-  { id: "a1", title: "Golden Hour Reverie",  category: "Landscape",  price: 1200, status: "active", image: "https://images.pexels.com/photos/1578632/pexels-photo-1578632.jpeg?auto=compress&cs=tinysrgb&w=120" },
-  { id: "a2", title: "Solitude at 3AM",      category: "Abstract",   price: 520,  status: "sold",   image: "https://images.pexels.com/photos/1125850/pexels-photo-1125850.jpeg?auto=compress&cs=tinysrgb&w=120" },
-  { id: "a3", title: "Watercolor Monsoon",   category: "Watercolor", price: 640,  status: "sold",   image: "https://images.pexels.com/photos/1000366/pexels-photo-1000366.jpeg?auto=compress&cs=tinysrgb&w=120" },
-  { id: "a4", title: "Crimson Dusk",         category: "Oil",        price: 840,  status: "active", image: "https://images.pexels.com/photos/1585325/pexels-photo-1585325.jpeg?auto=compress&cs=tinysrgb&w=120" },
-];
 
 const SALES_HISTORY = [
   { id: "s1", artworkTitle: "Solitude at 3AM",    buyer: "Lucas Ferreira", date: "2024-11-22", amount: 520 },
   { id: "s2", artworkTitle: "Watercolor Monsoon", buyer: "Arjun Bose",     date: "2024-12-04", amount: 640 },
 ];
 
-// ─── Nav (User Layout Style) ──────────────────────────────────────────────────
 const NAV_ITEMS = [
   { key: "artworks", label: "My Artworks",     icon: LayoutGrid },
   { key: "add",      label: "Add Artwork",      icon: PlusCircle },
@@ -44,7 +25,6 @@ const NAV_ITEMS = [
   { key: "settings", label: "Profile Settings", icon: Settings },
 ];
 
-// ─── Framer variants ──────────────────────────────────────────────────────────
 const pageVariants = {
   hidden:  { opacity: 0, y: 15 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 1, 0.5, 1] } },
@@ -52,16 +32,6 @@ const pageVariants = {
 };
 
 const stagger = { visible: { transition: { staggerChildren: 0.05 } } };
-const fadeUp = {
-  hidden:  { opacity: 0, y: 15 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-};
-
-const rowVariant = (i) => ({
-  initial:  { opacity: 0, x: -10 },
-  animate:  { opacity: 1, x: 0 },
-  transition: { delay: 0.1 + i * 0.05, duration: 0.3 },
-});
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -158,6 +128,7 @@ function ImageUploadZone({ onUpload, previewUrl, setPreviewUrl }) {
           )}
         </AnimatePresence>
       </div>
+      {uploadError && <p className="text-xs text-rose-400 mt-1">{uploadError}</p>}
     </div>
   );
 }
@@ -167,8 +138,8 @@ function ArtworkForm({ initial = null, onSubmit, onCancel, submitLabel = "Publis
   const [desc, setDesc]         = useState(initial?.description || "");
   const [price, setPrice]       = useState(initial?.price || "");
   const [category, setCategory] = useState(initial?.category || "");
-  const [imageUrl, setImageUrl] = useState(initial?.image || "");
-  const [previewUrl, setPreviewUrl] = useState(initial?.image || "");
+  const [imageUrl, setImageUrl] = useState(initial?.imageUrl || ""); 
+  const [previewUrl, setPreviewUrl] = useState(initial?.imageUrl || "");
   const [errors, setErrors]     = useState({});
 
   function handleSubmit(e) {
@@ -177,7 +148,7 @@ function ArtworkForm({ initial = null, onSubmit, onCancel, submitLabel = "Publis
       setErrors({ general: "Please fill all required fields" });
       return;
     }
-    onSubmit({ title, description: desc, price: Number(price), category, image: imageUrl });
+    onSubmit({ title, description: desc, price: Number(price), category, imageUrl });
   }
 
   const inputClass = "w-full bg-[#070B13] border border-gray-800/80 focus:border-[#C5A880]/40 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition-colors";
@@ -210,6 +181,7 @@ function ArtworkForm({ initial = null, onSubmit, onCancel, submitLabel = "Publis
         <label className={labelClass}>Upload Image</label>
         <ImageUploadZone onUpload={setImageUrl} previewUrl={previewUrl} setPreviewUrl={setPreviewUrl} />
       </div>
+      {errors.general && <p className="text-xs text-rose-400">{errors.general}</p>}
       <div className="flex items-center gap-3 pt-2">
         <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#C5A880] text-[#070B13] text-xs font-semibold hover:bg-[#bfa075] transition-colors">
           {submitLabel}
@@ -246,41 +218,59 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
 
   return (
     <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-medium text-gray-100">My Artworks</h2>
-          <p className="text-xs text-gray-500">Manage your gallery collection</p>
-        </div>
+      <div>
+        <h2 className="text-xl font-medium text-gray-100">My Artworks</h2>
+        <p className="text-xs text-gray-500">Manage your gallery collection</p>
       </div>
+
       <AnimatePresence mode="wait">
         {editTarget ? (
           <motion.div key="edit" className="border border-gray-800 bg-[#090E17]/60 p-5 rounded-xl">
             <ArtworkForm initial={editTarget} onSubmit={(upd) => {
-              setArtworks(p => p.map(a => a.id === editTarget.id ? {...a, ...upd} : a));
+              setArtworks(p => p.map(a => a._id === editTarget._id ? {...a, ...upd} : a));
               setEditTarget(null);
               showToast("Artwork updated");
             }} onCancel={() => setEditTarget(null)} submitLabel="Save Changes" />
           </motion.div>
+        ) : artworks.length === 0 ? (
+          /* ─── EMPTY STATE CREATED HERE ─── */
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="border border-gray-800/60 rounded-xl bg-[#090E17]/20 p-12 flex flex-col items-center justify-center text-center min-h-[340px]"
+          >
+            <div className="w-14 h-14 bg-[#131B2A] border border-gray-800 rounded-2xl flex items-center justify-center text-[#C5A880]/60 mb-4">
+              <ImageIcon size={24} />
+            </div>
+            <h3 className="text-sm font-semibold text-gray-300">No Artworks Found</h3>
+            <p className="text-xs text-gray-500 max-w-xs mt-1 mb-5">You haven't listed any art pieces in your gallery yet. Start publishing your work.</p>
+            <button 
+              onClick={() => setActiveTab("add")}
+              className="flex items-center gap-2 px-4 py-2 bg-[#C5A880]/10 border border-[#C5A880]/20 rounded-xl text-xs font-semibold text-[#C5A880] hover:bg-[#C5A880]/20 transition-all"
+            >
+              <PlusCircle size={14} /> Add First Artwork
+            </button>
+          </motion.div>
         ) : (
-          <div className="border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden">
+          <motion.div key="table" className="border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden">
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-gray-800/60 bg-[#070B13]/40 text-[11px] text-gray-500 uppercase tracking-wider">
                   <th className="p-4 font-normal">Artwork</th>
-                  <th className="p-4 font-normal">Artist</th>
+                  <th className="p-4 font-normal">Category</th>
                   <th className="p-4 font-normal">Price</th>
                   <th className="p-4 font-normal">Status</th>
                   <th className="p-4 font-normal text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-xs divide-y divide-gray-800/30">
-                {artworks.map((art, idx) => (
-                  <tr key={art.id} className="hover:bg-gray-800/10 transition-colors">
+                {artworks.map((art) => (
+                  <tr key={art._id} className="hover:bg-gray-800/10 transition-colors">
                     <td className="p-4 flex items-center gap-3">
-                      <img src={art.image} className="w-9 h-9 object-cover rounded-lg bg-gray-800" />
+                      <img src={art.imageUrl} className="w-9 h-9 object-cover rounded-lg bg-gray-800" />
                       <span className="font-medium text-gray-200">{art.title}</span>
                     </td>
-                    <td className="p-4 text-gray-400">Robin (You)</td>
+                    <td className="p-4 text-gray-400">{art.category}</td>
                     <td className="p-4 text-[#C5A880] font-semibold">${art.price.toLocaleString()}</td>
                     <td className="p-4">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border ${
@@ -299,11 +289,11 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
       {deleteTarget && <DeleteModal title={deleteTarget.title} onCancel={() => setDeleteTarget(null)} onConfirm={() => {
-        setArtworks(p => p.filter(a => a.id !== deleteTarget.id));
+        setArtworks(p => p.filter(a => a._id !== deleteTarget._id));
         setDeleteTarget(null);
         showToast("Artwork removed");
       }} />}
@@ -321,7 +311,7 @@ function AddArtwork({ setArtworks, setActiveTab, showToast }) {
       </div>
       <div className="border border-gray-800 bg-[#090E17]/50 p-5 rounded-xl">
         <ArtworkForm onSubmit={(data) => {
-          setArtworks(p => [{ id: `a_${Date.now()}`, ...data, status: "active" }, ...p]);
+          setArtworks(p => [{ _id: `a_${Date.now()}`, ...data, status: "active" }, ...p]);
           showToast("Artwork successfully published!");
           setActiveTab("artworks");
         }} />
@@ -370,8 +360,8 @@ function SalesHistory() {
 
 // ─── Page: Profile Settings ───────────────────────────────────────────────────
 function ProfileSettings({ showToast }) {
-  const [name, setName] = useState(MOCK_ARTIST.name);
-  const [email, setEmail] = useState(MOCK_ARTIST.email);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const inputClass = "w-full bg-[#070B13] border border-gray-800 focus:border-[#C5A880]/40 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-700 focus:outline-none";
 
   return (
@@ -383,11 +373,11 @@ function ProfileSettings({ showToast }) {
       <div className="border border-gray-800 bg-[#090E17]/50 p-5 rounded-xl space-y-4">
         <div>
           <label className="block text-xs text-gray-400 mb-1">Display Name</label>
-          <input value={name} onChange={e => setName(e.target.value)} className={inputClass} />
+          <input value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Your name" />
         </div>
         <div>
           <label className="block text-xs text-gray-400 mb-1">Email Address</label>
-          <input value={email} onChange={e => setEmail(e.target.value)} className={inputClass} />
+          <input value={email} onChange={e => setEmail(e.target.value)} className={inputClass} placeholder="Your email" />
         </div>
         <button onClick={() => showToast("Profile settings saved")} className="px-5 py-2 rounded-xl bg-[#C5A880] text-[#070B13] text-xs font-semibold">
           Save Settings
@@ -396,42 +386,74 @@ function ProfileSettings({ showToast }) {
     </motion.div>
   );
 }
-
-// ─── Main ArtistDashboard Component (Exact User Style Layout) ─────────────────
+const SERVER_URL=process.env.NEXT_PUBLIC_SERVER_URL;
+// ─── Main ArtistDashboard Component ─────────────────
 export default function ArtistDashboard() {
   const [activeTab, setActiveTab] = useState("artworks");
-  const [artworks, setArtworks] = useState(INITIAL_ARTWORKS);
+  const [artworks, setArtworks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { toast, showToast, clearToast } = useToast();
+  
+  const { data: session } = useSession();
+  const user = session?.user;
+  const userId = user?.id;
+
+  useEffect(() => {
+    const load = async () => {
+      if (!userId) return;
+      try {
+        setLoading(true);
+        const res = await fetch(`${SERVER_URL}/artworks?id=${userId}`);
+        const resData = await res.json();
+        if (resData && resData.data) {
+          setArtworks(resData.data);
+        } else {
+          setArtworks([]);
+        }
+      } catch (error) {
+        console.error("Error loading artworks:", error);
+        setArtworks([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [userId]);
 
   const totalSpentOrEarned = artworks.reduce((acc, curr) => acc + (curr.status === 'sold' ? curr.price : 0), 0);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#070B13] flex items-center justify-center text-gray-400 text-xs">
+        <Loader2 className="animate-spin text-[#C5A880] mr-2" size={16} /> Authenticating session...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen mt-20 bg-[#070B13] text-gray-100 flex flex-col md:flex-row p-4 md:p-6 gap-6 font-sans">
       
-      {/* ─── LEFT SIDEBAR (Matching User Dashboard Layout) ─── */}
-      <aside className="w-full md:w-[260px] flex flex-col gap-4 shrink-0">
-        
-        {/* User Profile Card */}
+      {/* ─── LEFT SIDEBAR ─── */}
+      <aside className="w-full md:w-65 flex flex-col gap-4 shrink-0">
         <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-5 flex flex-col items-center text-center shadow-lg relative overflow-hidden">
           <div className="relative mt-2">
             <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-800">
-              <img src={MOCK_ARTIST.avatar} alt="avatar" className="w-full h-full object-cover" />
+              <img src={user?.image || "https://via.placeholder.com/150"} alt={user?.name} className="w-full h-full object-cover" />
             </div>
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-[#090E17] rounded-full animate-pulse" />
           </div>
 
-          <h2 className="text-base font-semibold text-gray-100 mt-3 tracking-wide">{MOCK_ARTIST.name}</h2>
-          <p className="text-xs text-gray-500 mb-3">{MOCK_ARTIST.email}</p>
+          <h2 className="text-base font-semibold text-gray-100 mt-3 tracking-wide">{user?.name}</h2>
+          <p className="text-xs text-gray-500 mb-3">{user?.email}</p>
           
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-[#C5A880]/10 text-[#C5A880] border border-[#C5A880]/20">
             <Palette size={11} /> ARTIST
           </span>
 
-          {/* Stats Segment */}
           <div className="w-full grid grid-cols-2 border-t border-gray-800/50 pt-4 mt-4 text-center">
             <div>
               <p className="text-[10px] text-gray-500 uppercase tracking-wider">Artworks</p>
-              <p className="text-sm font-bold text-gray-200 mt-0.5">{artworks.length}</p>
+              <p className="text-sm font-bold text-gray-200 mt-0.5">{loading ? "..." : artworks.length}</p>
             </div>
             <div className="border-l border-gray-800/50">
               <p className="text-[10px] text-gray-500 uppercase tracking-wider">Earned</p>
@@ -440,7 +462,6 @@ export default function ArtistDashboard() {
           </div>
         </div>
 
-        {/* Navigation Block */}
         <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-2 flex flex-col gap-1 shadow-lg">
           <nav className="flex flex-col gap-0.5">
             {NAV_ITEMS.map((item) => {
@@ -467,7 +488,6 @@ export default function ArtistDashboard() {
           </nav>
         </div>
 
-        {/* Sign Out Action */}
         <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-2 shadow-lg">
           <button className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-rose-400/90 hover:bg-rose-950/20 hover:text-rose-400 transition-colors group">
             <LogOut size={14} className="text-rose-400/60 group-hover:text-rose-400" />
@@ -477,28 +497,27 @@ export default function ArtistDashboard() {
       </aside>
 
       {/* ─── RIGHT MAIN PANEL ─── */}
-      <main className="flex-1 bg-[#090E17]/40 border border-gray-800/50 rounded-2xl p-5 md:p-6 shadow-xl overflow-x-hidden min-h-[500px]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            variants={pageVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-          >
-            {activeTab === "artworks" && (
-              <MyArtworks artworks={artworks} setArtworks={setArtworks} setActiveTab={setActiveTab} showToast={showToast} />
-            )}
-            {activeTab === "add" && (
-              <AddArtwork setArtworks={setArtworks} setActiveTab={setActiveTab} showToast={showToast} />
-            )}
-            {activeTab === "sales" && <SalesHistory />}
-            {activeTab === "settings" && <ProfileSettings showToast={showToast} />}
-          </motion.div>
-        </AnimatePresence>
+      <main className="flex-1 bg-[#090E17]/40 border border-gray-800/50 rounded-2xl p-5 md:p-6 shadow-xl overflow-x-hidden min-h-[500px] flex flex-col">
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center text-gray-500 text-xs gap-2">
+            <Loader2 className="animate-spin text-[#C5A880]" size={16} /> Loading assets...
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div key={activeTab} variants={pageVariants} initial="hidden" animate="visible" exit="exit" className="w-full">
+              {activeTab === "artworks" && (
+                <MyArtworks artworks={artworks} setArtworks={setArtworks} setActiveTab={setActiveTab} showToast={showToast} />
+              )}
+              {activeTab === "add" && (
+                <AddArtwork setArtworks={setArtworks} setActiveTab={setActiveTab} showToast={showToast} />
+              )}
+              {activeTab === "sales" && <SalesHistory />}
+              {activeTab === "settings" && <ProfileSettings showToast={showToast} />}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </main>
 
-      {/* System Notification Toast */}
       <AnimatePresence>
         {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
       </AnimatePresence>

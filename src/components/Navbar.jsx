@@ -64,6 +64,12 @@ const Navbar = () => {
                 <motion.div layoutId="underline" className="absolute left-0 bottom-0 h-[1px] w-full bg-[#C5A880]" />
               )}
             </Link>
+            {user?.role ? <Link href={`/dashboard/${user?.role}`} className={`relative pb-1 transition duration-300 ${isActive(`/dashboard/${user?.role}`) ? 'text-[#C5A880]' : 'text-[#1A1A1A] dark:text-[#F3F4F6]'}`}>
+              Dashboard
+              {isActive(`/dashboard/${user?.role}`) && (
+                <motion.div layoutId="underline" className="absolute left-0 bottom-0 h-[1px] w-full bg-[#C5A880]" />
+              )}
+            </Link>:""}
 
             {/* Theme Toggle */}
             {mounted && (
@@ -93,16 +99,6 @@ const Navbar = () => {
                       {/* Dashboard option */}
                       <Link href={`/dashboard/${user.role}`} onClick={() => setIsDropdownOpen(false)} className="flex items-center px-4 py-2.5 hover:bg-[#FDFBF7] dark:hover:bg-[#1F2937]/50 text-gray-700 dark:text-gray-300 transition-colors">
                         <LayoutDashboard size={14} className="mr-2.5 text-[#C5A880]" /> Dashboard
-                      </Link>
-
-                      {/* Profile option */}
-                      <Link href="/profile" onClick={() => setIsDropdownOpen(false)} className="flex items-center px-4 py-2.5 hover:bg-[#FDFBF7] dark:hover:bg-[#1F2937]/50 text-gray-700 dark:text-gray-300 transition-colors">
-                        <User size={14} className="mr-2.5 text-[#C5A880]" /> Profile
-                      </Link>
-
-                      {/* Settings option */}
-                      <Link href="/settings" onClick={() => setIsDropdownOpen(false)} className="flex items-center px-4 py-2.5 hover:bg-[#FDFBF7] dark:hover:bg-[#1F2937]/50 text-gray-700 dark:text-gray-300 transition-colors">
-                        <Settings size={14} className="mr-2.5 text-[#C5A880]" /> Settings
                       </Link>
 
                       <div className="border-t border-gray-100 dark:border-gray-800/60 my-1"></div>
@@ -162,12 +158,7 @@ const Navbar = () => {
                   <Link href={`/dashboard/${user.role}`} onClick={() => setIsOpen(false)} className="flex items-center py-2 text-gray-700 dark:text-gray-300">
                     <LayoutDashboard size={14} className="mr-2 text-[#C5A880]" /> Dashboard
                   </Link>
-                  <Link href="/profile" onClick={() => setIsOpen(false)} className="flex items-center py-2 text-gray-700 dark:text-gray-300">
-                    <User size={14} className="mr-2 text-[#C5A880]" /> Profile Settings
-                  </Link>
-                  <Link href="/settings" onClick={() => setIsOpen(false)} className="flex items-center py-2 text-gray-700 dark:text-gray-300">
-                    <Settings size={14} className="mr-2 text-[#C5A880]" /> Preferences
-                  </Link>
+                  
                   <button onClick={() => { handleLogout(); setIsOpen(false); }} className="w-full flex items-center py-2 text-red-600 dark:text-red-400 text-left font-medium">
                     <LogOut size={14} className="mr-2" /> Log Out
                   </button>
