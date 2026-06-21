@@ -89,7 +89,7 @@ function LocalImageUploadZone({ onUpload, previewUrl, setPreviewUrl }) {
   );
 }
 
-export default function AddArtwork({ setArtworks, setActiveTab, showToast, userId }) {
+export default function AddArtwork({ setArtworks, setActiveTab, showToast, userId,userName }) {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [price, setPrice] = useState("");
@@ -114,7 +114,8 @@ export default function AddArtwork({ setArtworks, setActiveTab, showToast, userI
         price: Number(price),
         category: category,
         imageUrl: imageUrl,
-        artistId: userId
+        artistId: userId,
+        artistName:userName
       };
 
       const res = await fetch(`${BASE_URL}/artworks`, {

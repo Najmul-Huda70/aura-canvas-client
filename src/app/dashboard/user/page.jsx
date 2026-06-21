@@ -32,7 +32,6 @@ import {
 } from "lucide-react";
 import { authClient, useSession } from "@/lib/auth-client";
 import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 // ─── Mock data ────────────────────────────────────────────────────────────────
 const MOCK_USER = {
@@ -723,7 +722,7 @@ function SubscriptionTier({ currentTier }) {
 }
 
 // ─── Section: Profile Settings ────────────────────────────────────────────────
-function ProfileSettings({ user }) {
+function ProfileSettings({ user}) {
 
   const initialName = user?.name;
   const initialEmail = user?.email;
@@ -794,6 +793,7 @@ function ProfileSettings({ user }) {
       }
 
       toast.success("Password updated successfully!");
+      
       setCurrentPw("");
       setNewPw("");
       setConfirmPw("");
@@ -810,6 +810,21 @@ function ProfileSettings({ user }) {
   }
 }
 
+ const handleDelete = async () => {
+  try {
+  await authClient.deleteUser();
+    
+  toast.success("Successfully deleted!");
+    
+    setTimeout(() => {
+      window.location.href = '/'; 
+    }, 500);
+
+  } catch (error) {
+    console.error("Failed to delete account:", error);
+    toast.error("Something went wrong!");
+  }
+};
   return (
     <motion.div
       variants={stagger}
@@ -958,7 +973,7 @@ function ProfileSettings({ user }) {
           Permanently delete your account and all purchase history. This cannot
           be undone.
         </p>
-        <button className="text-xs text-rose-500 border border-rose-800/50 px-4 py-2 rounded-lg hover:bg-rose-900/20 transition-colors font-medium">
+        <button onClick={handleDelete} className="text-xs text-rose-500 border border-rose-800/50 px-4 py-2 rounded-lg hover:bg-rose-900/20 transition-colors font-medium">
           Delete account
         </button>
       </motion.div>
@@ -968,6 +983,7 @@ function ProfileSettings({ user }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function UserDashboard() {
+  
   const [activeTab, setActiveTab] = useState("history");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [purchase, setPurchase] = useState([]);
@@ -1009,7 +1025,7 @@ export default function UserDashboard() {
     artworks: <BoughtArtworks />,
     reviews: <MyReviews />,
     tier: <SubscriptionTier currentTier={MOCK_USER.tier} />,
-    settings: <ProfileSettings user={user} />,
+    settings: <ProfileSettings user={user}/>,
   };
 
   const currentTierData = TIERS[MOCK_USER.tier];
