@@ -20,7 +20,7 @@ const Navbar = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
-  console.log('user role:',user?.role);
+  // console.log('user role:',user?.role);
   useEffect(() => {
     const f=()=>setMounted(true);
     f();

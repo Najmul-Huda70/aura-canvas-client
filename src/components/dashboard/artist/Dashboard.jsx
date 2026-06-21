@@ -6,10 +6,18 @@ import {
   LayoutGrid, PlusCircle, Settings, LogOut,
   Palette, ChevronRight, Edit3, Trash2,
   Upload, X, CheckCircle, XCircle, Loader2,
-  History, ImageIcon, RotateCcw
+  History, ImageIcon, RotateCcw,
+  Camera,
+  EyeOff,
+  Eye,
+  Check,
+  AlertCircle,
+  Icon,
+  Package
 } from "lucide-react";
-import { useSession } from "@/lib/auth-client";
+import { authClient, useSession } from "@/lib/auth-client";
 import AddArtwork from "./AddArtwork";
+import toast from "react-hot-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMGBB_API;
@@ -19,6 +27,14 @@ const SALES_HISTORY = [
   { id: "s1", artworkTitle: "Solitude at 3AM",    buyer: "Lucas Ferreira", date: "2024-11-22", amount: 520 },
   { id: "s2", artworkTitle: "Watercolor Monsoon", buyer: "Arjun Bose",     date: "2024-12-04", amount: 640 },
 ];
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+  },
+};
 
 const NAV_ITEMS = [
   { key: "artworks", label: "My Artworks",     icon: LayoutGrid },
@@ -418,30 +434,246 @@ function SalesHistory() {
   );
 }
 
-function ProfileSettings({ showToast }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const inputClass = "w-full bg-[#070B13] border border-gray-800 focus:border-[#C5A880]/40 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-700 focus:outline-none";
+function ProfileSettings({ user }) {
+  const initialName = user?.name;
+  const initialEmail = user?.email;
+  const [name, setName] = useState(initialName || "");
+  const [email, setEmail] = useState(initialEmail || "");
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+  async function handleSave(e) {
+  e.preventDefault();
+  setSaved(false);
+  setLoading(true);
+
+  try {
+   //name changes
+    if (initialName !== name && name.trim() !== "") {
+      const { error: nameError } = await authClient.updateUser({
+        name: name,
+      });
+      if (nameError) {
+        toast.error(`Name update failed: ${nameError.message}`);
+        setLoading(false);
+        return;
+      }
+      toast.success("Name updated successfully!");
+    }
+
+    //email changes
+    if (initialEmail !== email && email.trim() !== "") {
+      const { error: emailError } = await authClient.changeEmail({
+        newEmail: email,
+      });
+      if (emailError) {
+        toast.error(`Email update failed: ${emailError.message}`);
+        setLoading(false);
+        return;
+      }
+      toast.success("Verification email sent to new address!");
+    }
+
+   //password changes
+    if (currentPw || newPw || confirmPw) {
+      if (newPw !== confirmPw) {
+        toast.error("New passwords do not match!");
+        setLoading(false);
+        return;
+      }
+
+      if (!currentPw || !newPw) {
+        toast.error("Please provide both current and new passwords.");
+        setLoading(false);
+        return;
+      }
+
+      const { error: pwError } = await authClient.changePassword({
+        newPassword: newPw,
+        currentPassword: currentPw,
+        revokeOtherSessions: true,
+      });
+
+      if (pwError) {
+        toast.error(`Password Error: ${pwError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      toast.success("Password updated successfully!");
+      setCurrentPw("");
+      setNewPw("");
+      setConfirmPw("");
+    }
+
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+
+  } catch (err) {
+    console.error("Profile update failed:", err);
+    toast.error("Something went wrong!");
+  } finally {
+    setLoading(false);
+  }
+}
 
   return (
-    <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6 max-w-xl">
-      <div>
-        <h2 className="text-xl font-medium text-gray-100">Profile Settings</h2>
-        <p className="text-xs text-gray-500">Manage your profile visibility and info</p>
-      </div>
-      <div className="border border-gray-800 bg-[#090E17]/50 p-5 rounded-xl space-y-4">
-        <div>
-          <label className="block text-xs text-gray-400 mb-1">Display Name</label>
-          <input value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Your name" />
+    <motion.div
+      variants={stagger}
+      initial="hidden"
+      animate="visible"
+      className="space-y-7 max-w-2xl"
+    >
+      <motion.div variants={fadeUp}>
+        <h2 className="text-xl font-serif text-gray-100">Profile Settings</h2>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Update your personal information
+        </p>
+      </motion.div>
+
+      {/* Avatar */}
+      <motion.div variants={fadeUp} className="flex items-center gap-5">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#C5A880]/30">
+            <img
+              src={user?.image}
+              alt="avatar"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-[#C5A880] text-[#0B0F19] flex items-center justify-center shadow-md"
+          >
+            <Camera size={11} />
+          </motion.button>
         </div>
         <div>
-          <label className="block text-xs text-gray-400 mb-1">Email Address</label>
-          <input value={email} onChange={e => setEmail(e.target.value)} className={inputClass} placeholder="Your email" />
+          <p className="text-sm font-medium text-gray-200">{name}</p>
+          <p className="text-xs text-gray-500">{email}</p>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-[#C5A880]/10 text-[#C5A880] border border-[#C5A880]/20">
+            <Palette size={11} /> ARTIST
+          </span>
         </div>
-        <button onClick={() => showToast("Profile settings saved")} className="px-5 py-2 rounded-xl bg-[#C5A880] text-[#070B13] text-xs font-semibold">
-          Save Settings
+      </motion.div>
+
+      {/* Profile form */}
+      <motion.form
+        variants={fadeUp}
+        onSubmit={handleSave}
+        className="space-y-5"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Name */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] uppercase tracking-widest text-gray-500">
+              Display name
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-[#0E1420]/80 border border-gray-800 focus:border-[#C5A880]/50 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none transition-colors"
+            />
+          </div>
+          {/* Email */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] uppercase tracking-widest text-gray-500">
+              Email address
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-[#0E1420]/80 border border-gray-800 focus:border-[#C5A880]/50 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 pt-2">
+          <div className="flex-1 h-px bg-gray-800/60" />
+          <span className="text-[10px] uppercase tracking-widest text-gray-600">
+            Change password
+          </span>
+          <div className="flex-1 h-px bg-gray-800/60" />
+        </div>
+
+        <div className="space-y-3">
+          {[
+            { label: "Current password", val: currentPw, set: setCurrentPw },
+            { label: "New password", val: newPw, set: setNewPw },
+            { label: "Confirm password", val: confirmPw, set: setConfirmPw },
+          ].map(({ label, val, set }) => (
+            <div key={label} className="relative">
+              <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1.5">
+                {label}
+              </label>
+              <input
+                type={showPw ? "text" : "password"}
+                value={val}
+                onChange={(e) => set(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-[#0E1420]/80 border border-gray-800 focus:border-[#C5A880]/50 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition-colors"
+              />
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowPw((v) => !v)}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors mt-1"
+          >
+            {showPw ? <EyeOff size={12} /> : <Eye size={12} />}
+            {showPw ? "Hide" : "Show"} passwords
+          </button>
+        </div>
+
+        {/* Save */}
+        <div className="flex items-center gap-3 pt-2">
+          <motion.button
+            type="submit"
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.97 }}
+            className="px-6 py-3 rounded-xl bg-[#C5A880] text-[#0B0F19] text-sm font-bold hover:bg-[#d4b99a] transition-colors shadow-md shadow-[#C5A880]/10"
+          >
+            Save changes
+          </motion.button>
+          <AnimatePresence>
+            {saved && (
+              <motion.div
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-1.5 text-xs text-emerald-400"
+              >
+                <Check size={13} />
+                Saved successfully
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.form>
+
+      {/* Danger zone */}
+      <motion.div
+        variants={fadeUp}
+        className="rounded-2xl border border-rose-900/30 bg-rose-950/10 p-5"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <AlertCircle size={14} className="text-rose-400" />
+          <p className="text-sm font-semibold text-rose-400">Danger zone</p>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">
+          Permanently delete your account and all purchase history. This cannot
+          be undone.
+        </p>
+        <button className="text-xs text-rose-500 border border-rose-800/50 px-4 py-2 rounded-lg hover:bg-rose-900/20 transition-colors font-medium">
+          Delete account
         </button>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -560,7 +792,7 @@ export default function ArtistDashboard() {
                 <AddArtwork setArtworks={setArtworks} setActiveTab={setActiveTab} showToast={showToast} userId={userId}/>
               )}
               {activeTab === "sales" && <SalesHistory />}
-              {activeTab === "settings" && <ProfileSettings showToast={showToast} />}
+              {activeTab === "settings" && <ProfileSettings user={user}/>}
             </motion.div>
           </AnimatePresence>
         )}
