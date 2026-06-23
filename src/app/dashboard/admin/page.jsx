@@ -7,6 +7,7 @@ import {
   Trash2, UserCheck, ChevronRight, CheckCircle, 
   X, DollarSign, ShoppingBag, PieChart, LogOut
 } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const INITIAL_USERS = [
@@ -79,7 +80,8 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState(INITIAL_USERS);
   const [artworks, setArtworks] = useState(INITIAL_ARTWORKS);
   const [toast, setToast] = useState(null);
-
+  const {data:session}=useSession();
+  const user=session?.user;
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
@@ -106,7 +108,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen mt-20 bg-[#070B13] text-gray-100 flex flex-col md:flex-row p-4 md:p-6 gap-6 font-sans">
       
       {/* ─── LEFT SIDEBAR (Matching User/Artist Style) ─── */}
-      <aside className="w-full md:w-[260px] flex flex-col gap-4 shrink-0">
+      <aside className="w-full md:w-65 flex flex-col gap-4 shrink-0">
         
         {/* Admin Profile Card */}
         <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-5 flex flex-col items-center text-center shadow-lg relative overflow-hidden">
@@ -117,11 +119,11 @@ export default function AdminDashboard() {
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#C5A880] border-2 border-[#090E17] rounded-full animate-pulse" />
           </div>
 
-          <h2 className="text-base font-semibold text-gray-100 mt-3 tracking-wide">Najmul Huda</h2>
-          <p className="text-xs text-gray-500 mb-3">admin@auracanvas.com</p>
+          <h2 className="text-base font-semibold text-gray-100 mt-3 tracking-wide">{user?.name}</h2>
+          <p className="text-xs text-gray-500 mb-3">{user?.email}</p>
           
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-[#C5A880]/10 text-[#C5A880] border border-[#C5A880]/20">
-            <Shield size={11} /> System Admin
+            <Shield size={11} /> {user?.role.toUpperCase()}
           </span>
         </div>
 
