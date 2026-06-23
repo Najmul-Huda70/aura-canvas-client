@@ -17,6 +17,8 @@ import {
   MessageSquare,
   Send
 } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
+import Link from "next/link";
 
 const MOCK_USER = {
   id: "artist_001",
@@ -53,7 +55,9 @@ export default function ArtworkDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
-
+  const {data:session}=useSession();
+  const user=session?.user;
+  console.log('user: ',user);
   // Review States
   const [reviews, setReviews] = useState([
     { id: 1, name: "Alex Rivera", rating: 5, comment: "The textures look amazing in person. Absolute masterpiece!", date: "2 days ago" },
@@ -62,7 +66,7 @@ export default function ArtworkDetails() {
   const [newComment, setNewComment] = useState("");
   const [newRating, setNewRating] = useState(5);
 
-  // ─── ১. ডেটা ফেচিং লজিক ফিক্স (সাকসেস ও অ্যারে ইনডেক্স চেক) ───────────────────
+  // ─── artworks data fetching ───────────────────
   useEffect(() => {
     if (!id) return;
 
@@ -83,9 +87,8 @@ export default function ArtworkDetails() {
         
         const resData = await res.json();
         
-        // ব্যাকএন্ডের { success: true, data: [...] } ফরম্যাট ফিল্টার করা হচ্ছে
         if (resData && resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
-          setArtwork(resData.data[0]); // অ্যারের প্রথম অবজেক্টটি নেওয়া হলো
+          setArtwork(resData.data[0]); 
           setNotFound(false);
         } else {
           setNotFound(true);
@@ -101,21 +104,20 @@ export default function ArtworkDetails() {
     fetchArtworkData();
   }, [id]);
 
-  const user = MOCK_USER;
-  const isLoggedIn = user.role !== "guest";
-  const isOwner = user.role === "artist" && user.artistId === artwork?.artistId;
+  const isLoggedIn = user?.role;
+  const isOwner = user?.role === "artist" && user?.id === artwork?.artistId;
   const canPurchase = isLoggedIn && !isOwner && artwork?.status === "available" && !purchaseSuccess;
 
-  async function handlePurchase() {
-    if (!canPurchase) return;
-    setPurchasing(true);
-    try {
-      await new Promise((r) => setTimeout(r, 1200));
-      setPurchaseSuccess(true);
-    } finally {
-      setPurchasing(false);
-    }
-  }
+  // async function handlePurchase() {
+  //   if (!canPurchase) return;
+  //   setPurchasing(true);
+  //   try {
+  //     await new Promise((r) => setTimeout(r, 1200));
+  //     setPurchaseSuccess(true);
+  //   } finally {
+  //     setPurchasing(false);
+  //   }
+  // }
 
   const handleAddReview = (e) => {
     e.preventDefault();
@@ -264,10 +266,11 @@ export default function ArtworkDetails() {
               </div>
             )}
 
-            {!isOwner && isLoggedIn && (
-              <button
-                onClick={handlePurchase}
-                disabled={!canPurchase || purchasing}
+           
+              <Link
+                // onClick={handlePurchase}
+                href={`/purchase?artworkId=${artwork?._id}&userId=${user?.id}`}
+                // disabled={!canPurchase || purchasing}
                 className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-xs uppercase tracking-widest font-bold transition-all ${
                   canPurchase
                     ? "bg-[#C5A880] text-[#0B0F19] hover:bg-[#b3956d] shadow-lg shadow-[#C5A880]/10"
@@ -283,8 +286,8 @@ export default function ArtworkDetails() {
                     <ShoppingBag size={14} /> Acquire Artwork · ${artwork.price?.toLocaleString()}
                   </>
                 )}
-              </button>
-            )}
+              </Link>
+           
           </div>
         </div>
       </div>

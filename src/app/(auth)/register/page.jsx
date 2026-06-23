@@ -131,6 +131,7 @@ export default function RegisterPage() {
 
     const { name, email, password, role } = formData;
     try {
+      const plan=role==="user" ? "user_free" :"artist_free";
       const { error } = await signUp.email({
         name: name,
         email: email,
@@ -138,6 +139,7 @@ export default function RegisterPage() {
         // Programmatic fallback configuration linking unique placeholder avatars using DiceBear SVG profiles
         image: `https://api.dicebear.com/10.x/initials/svg?seed=${encodeURIComponent(name)}`,
         role: role || "user",
+        plan:plan
         // callbackURL: "/login",
       });
       

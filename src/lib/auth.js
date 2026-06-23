@@ -16,6 +16,7 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       role: { default: "user" },
+      plan:{default:'user_free'}
     },
     changeEmail: {
       enabled: true,
