@@ -1,7 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -10,14 +9,15 @@ import {
 } from 'lucide-react';
 import { useSession, signOut } from '@/lib/auth-client'; // Better-Auth signOut ইমপোর্ট করা হয়েছে
 import toast from 'react-hot-toast';
+import { usePathname, useRouter } from 'next/navigation';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+  const router=useRouter();
   const { data: session } = useSession();
   const user = session?.user;
   // console.log('user role:',user?.role);
@@ -30,11 +30,10 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut({
-        callbackURL: "/login"
-      });
+      await signOut();
       toast.success("Logged out successfully");
       setIsDropdownOpen(false);
+      router.push('/');
     } catch (error) {
       toast.error("Failed to log out");
     }

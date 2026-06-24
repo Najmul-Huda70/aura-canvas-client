@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { authClient, useSession } from "@/lib/auth-client";
 import toast from "react-hot-toast";
+import { redirect } from "next/navigation";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 const iconMap = {
@@ -627,11 +628,10 @@ function SubscriptionTier({ currentPlan, purchaseCount }) {
               variants={fadeUp}
               whileHover={isCurrent ? {} : { y: -4 }}
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
-              className={`relative rounded-2xl border p-5 transition-all duration-200 ${
-                isCurrent
+              className={`relative rounded-2xl border p-5 transition-all duration-200 ${isCurrent
                   ? `${t.border} ${t.bg} shadow-lg ${t.glow}`
                   : "border-gray-800/60 bg-[#0E1420]/50 hover:border-gray-700"
-              }`}
+                }`}
             >
               {isCurrent && (
                 <motion.div
@@ -677,11 +677,10 @@ function SubscriptionTier({ currentPlan, purchaseCount }) {
                   <motion.button
                     type="submit"
                     whileTap={{ scale: 0.97 }}
-                    className={`w-full mt-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-colors ${
-                      key === "user_premium"
+                    className={`w-full mt-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-colors ${key === "user_premium"
                         ? "bg-[#C5A880] text-[#0B0F19] hover:bg-[#d4b99a]"
                         : "border border-violet-500/40 text-violet-400 hover:bg-violet-950/30"
-                    }`}
+                      }`}
                   >
                     Upgrade to {t.label}
                   </motion.button>
@@ -807,10 +806,9 @@ function ProfileSettings({ user }) {
   }
 
   const inputCls = (hasErr) =>
-    `w-full bg-[#0E1420]/80 border rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition-colors ${
-      hasErr
-        ? "border-rose-800/60"
-        : "border-gray-800 focus:border-[#C5A880]/50"
+    `w-full bg-[#0E1420]/80 border rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition-colors ${hasErr
+      ? "border-rose-800/60"
+      : "border-gray-800 focus:border-[#C5A880]/50"
     }`;
 
   return (
@@ -1008,14 +1006,13 @@ export default function UserDashboard() {
   const [activeTab, setActiveTab] = useState("history");
   const [purchases, setPurchases] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [plans,setPlans]=useState([]);
+  const [plans, setPlans] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
 
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const userId = user?.id;
-  const userPlan=user?.plan;
-  
+  const userPlan = user?.plan;
 
   // ── Fetch purchases + reviews in parallel once userId is ready ─────────────
   useEffect(() => {
@@ -1028,7 +1025,7 @@ export default function UserDashboard() {
         fetch(`${BASE_URL}/reviews?userId=${userId}`).then((r) => r.json()),
         fetch(`${BASE_URL}/plans?planId=${userPlan}`).then((r) => r.json()),
       ])
-        .then(([purchaseRes, reviewRes,plan]) => {
+        .then(([purchaseRes, reviewRes, plan]) => {
           setPurchases(purchaseRes.data || []);
           setReviews(reviewRes.data || []);
           setPlans(plan.data || []);
@@ -1040,28 +1037,22 @@ export default function UserDashboard() {
         .finally(() => setDataLoading(false));
     };
     f();
-  }, [userId,userPlan]);
-console.log('plans now: ',plans);
-  // ── Auth loading ───────────────────────────────────────────────────────────
-  if (isPending) {
-    return (
-      <div className="min-h-screen bg-[#090D16] flex items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-        >
-          <Loader2 size={28} className="text-[#C5A880]" />
-        </motion.div>
-      </div>
-    );
-  }
+  }, [userId, userPlan]);
+  console.log("plans now: ", plans);
+  useEffect(() => {
+    if (isPending) return;
+    if (!user) {
+      redirect("/unauthorized");
+    } else if (user?.role !== "user") {
+      redirect("/forbidden");
+    }
+  }, [user, isPending]);
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#090D16] flex items-center justify-center">
-        <p className="text-sm text-gray-400">
-          Please sign in to view your dashboard.
-        </p>
+      <div className="min-h-screen bg-[#070B13] flex items-center justify-center text-gray-400 text-xs">
+        <Loader2 className="animate-spin text-[#C5A880] mr-2" size={16} />{" "}
+        Authenticating session...
       </div>
     );
   }
@@ -1157,11 +1148,10 @@ console.log('plans now: ',plans);
                   key={key}
                   onClick={() => setActiveTab(key)}
                   whileTap={{ scale: 0.98 }}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-150 text-left ${
-                    active
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-150 text-left ${active
                       ? "bg-[#C5A880]/15 text-[#C5A880] border border-[#C5A880]/20 font-medium"
                       : "text-gray-500 hover:text-gray-200 hover:bg-gray-800/40"
-                  }`}
+                    }`}
                 >
                   <Icon size={15} />
                   {label}
@@ -1189,11 +1179,10 @@ console.log('plans now: ',plans);
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
-                  activeTab === key
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${activeTab === key
                     ? "bg-[#C5A880]/15 text-[#C5A880] border border-[#C5A880]/20"
                     : "text-gray-500 bg-gray-800/40 border border-gray-800"
-                }`}
+                  }`}
               >
                 <Icon size={12} /> {label}
               </button>
