@@ -428,9 +428,9 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="text-xs divide-y divide-gray-800/30">
-                      {users.map((user) => (
+                      {users.map((user,index) => (
                         <tr
-                          key={user.id}
+                          key={index}
                           className="hover:bg-gray-800/10 transition-colors"
                         >
                           <td className="p-4 font-medium text-gray-200">

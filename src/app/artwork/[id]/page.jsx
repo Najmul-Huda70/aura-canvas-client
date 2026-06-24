@@ -15,20 +15,22 @@ import {
   Loader2,
   Star,
   MessageSquare,
-  Send
+  Send,
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
-
+import GatewayTimeoutPage from "@/components/gatewayTimeOutPage";
 
 function StatusBadge({ status }) {
   const isAvailable = status === "available";
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-sm text-[10px] font-sans uppercase tracking-wider font-semibold border ${
-      isAvailable
-        ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/20 backdrop-blur-md"
-        : "bg-rose-950/40 text-rose-400 border-rose-500/20 backdrop-blur-md"
-    }`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-sm text-[10px] font-sans uppercase tracking-wider font-semibold border ${
+        isAvailable
+          ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/20 backdrop-blur-md"
+          : "bg-rose-950/40 text-rose-400 border-rose-500/20 backdrop-blur-md"
+      }`}
+    >
       {isAvailable ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
       {isAvailable ? "Available" : "Sold Out"}
     </span>
@@ -45,62 +47,116 @@ export default function ArtworkDetails() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [isTimeout, setIsTimeout] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
-  const {data:session}=useSession();
-  const user=session?.user;
-  console.log('user: ',user);
+  const { data: session } = useSession();
+  const user = session?.user;
+  console.log("user: ", user);
   // Review States
   const [reviews, setReviews] = useState([
-    { id: 1, name: "Alex Rivera", rating: 5, comment: "The textures look amazing in person. Absolute masterpiece!", date: "2 days ago" },
-    { id: 2, name: "Sophia Zhang", rating: 4, comment: "Beautiful blending of colors. Perfect for my living room.", date: "1 week ago" }
+    {
+      id: 1,
+      name: "Alex Rivera",
+      rating: 5,
+      comment: "The textures look amazing in person. Absolute masterpiece!",
+      date: "2 days ago",
+    },
+    {
+      id: 2,
+      name: "Sophia Zhang",
+      rating: 4,
+      comment: "Beautiful blending of colors. Perfect for my living room.",
+      date: "1 week ago",
+    },
   ]);
   const [newComment, setNewComment] = useState("");
   const [newRating, setNewRating] = useState(5);
 
   // ─── artworks data fetching ───────────────────
-  useEffect(() => {
-    if (!id) return;
+useEffect(() => {
+  if (!id) return;
 
-    const fetchArtworkData = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`${BASE_URL}/artworks?id=${id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (!res.ok) {
-          setNotFound(true);
-          return;
-        }
-        
-        const resData = await res.json();
-        
-        if (resData && resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
-          setArtwork(resData.data[0]); 
-          setNotFound(false);
+  const controller = new AbortController();
+  let isAbortedByCleanup = false; 
+  
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, 15000); 
+  
+  const fetchArtworkData = async () => {
+    setLoading(true);    
+    setNotFound(false);  
+    setIsTimeout(false); 
+    
+    try {
+      const res = await fetch(`${BASE_URL}/artworks?id=${id}`, {
+        method: "GET",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        if (res.status === 504) {
+          setIsTimeout(true);
         } else {
           setNotFound(true);
         }
-      } catch (error) {
-        console.error("Failed to fetch artwork:", error);
+        return;
+      }
+      
+      const resData = await res.json();
+
+      if (
+        resData &&
+        resData.success &&
+        Array.isArray(resData.data) &&
+        resData.data.length > 0
+      ) {
+        setArtwork(resData.data[0]);
+      } else {
         setNotFound(true);
-      } finally {
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        // 🎯 যদি ক্লিনআপের কারণে রিকোয়েস্ট কাটা পড়ে, তবে ৫MD৪ দেখাবে না। 
+        // শুধুমাত্র ১৫ সেকেন্ড পার হয়ে টাইমার রিকোয়েস্ট কাটলেই ৫MD৪ দেখাবে।
+        if (!isAbortedByCleanup) {
+          setIsTimeout(true);
+        }
+      } else {
+        console.error("Failed to fetch artwork:", error);
+        setNotFound(true); 
+      }
+    } finally {
+      if (!isAbortedByCleanup) {
         setLoading(false);
       }
-    };
+    }
+  };
 
-    fetchArtworkData();
-  }, [id]);
+  fetchArtworkData();
+  
+  return () => {
+    isAbortedByCleanup = true;
+    clearTimeout(timeoutId);
+    controller.abort();
+  };
+}, [id]);
 
   const isLoggedIn = user?.role;
   const isOwner = user?.role === "artist" && user?.id === artwork?.artistId;
-  console.log('isOwner:',isOwner);
-  const canPurchase = isLoggedIn && !isOwner && artwork?.status === "available" && !purchaseSuccess;
+  console.log("isOwner:", isOwner);
+  const canPurchase =
+    isLoggedIn &&
+    !isOwner &&
+    artwork?.status === "available" &&
+    !purchaseSuccess;
 
   // async function handlePurchase() {
   //   if (!canPurchase) return;
@@ -116,13 +172,13 @@ export default function ArtworkDetails() {
   const handleAddReview = (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-    
+
     const reviewObj = {
       id: Date.now(),
       name: user.name || "Anonymous",
       rating: newRating,
       comment: newComment,
-      date: "Just now"
+      date: "Just now",
     };
 
     setReviews([reviewObj, ...reviews]);
@@ -135,48 +191,39 @@ export default function ArtworkDetails() {
       <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
         <div className="text-center space-y-3">
           <Loader2 size={32} className="animate-spin text-[#C5A880] mx-auto" />
-          <p className="text-xs tracking-widest text-gray-400 uppercase">Loading Masterpiece...</p>
+          <p className="text-xs tracking-widest text-gray-400 uppercase">
+            Loading Masterpiece...
+          </p>
         </div>
       </div>
     );
   }
 
-  if (notFound || !artwork) {
-    return (
-      <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <ImageOff size={40} className="text-[#C5A880] mx-auto mb-4" />
-          <h2 className="text-xl font-serif text-gray-100 mb-2">Artwork not found</h2>
-          <button onClick={() => router.push("/artworks")} className="mt-4 px-5 py-2 rounded-sm bg-[#C5A880] text-[#0B0F19] text-xs font-semibold tracking-wider uppercase">
-            Back to gallery
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+  
+if (isTimeout || notFound || !artwork) return <GatewayTimeoutPage />;
   return (
     <div className="min-h-screen bg-[#0B0F19] text-gray-100 font-sans antialiased selection:bg-[#C5A880]/30">
-      
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-4">
         <button
           onClick={() => router.back()}
           className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-gray-400 hover:text-[#C5A880] transition-colors group"
         >
-          <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
+          <ArrowLeft
+            size={12}
+            className="group-hover:-translate-x-1 transition-transform"
+          />
           Back to Collection
         </button>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-5 items-start">
-        
         {/* LEFT: IMAGE PANEL */}
-        <div className="lg:col-span-7 space-y-4 lg:h-[calc(100vh-180px)] lg:sticky lg:top-24"> 
+        <div className="lg:col-span-7 space-y-4 lg:h-[calc(100vh-180px)] lg:sticky lg:top-24">
           <div className="relative rounded-xl overflow-hidden h-full aspect-7/8 max-h-[600px] lg:max-h-full bg-[#111827] border border-gray-800/60 shadow-2xl mx-auto">
             <motion.img
               src={artwork.imageUrl}
               alt={artwork.title}
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-cover"
               onLoad={() => setImgLoaded(true)}
               initial={{ opacity: 0 }}
               animate={{ opacity: imgLoaded ? 1 : 0 }}
@@ -201,7 +248,7 @@ export default function ArtworkDetails() {
                 {artwork.category}
               </span>
             </div>
-            
+
             <h1 className="text-3xl sm:text-4xl font-serif font-medium text-gray-100 tracking-tight leading-tight">
               {artwork.title}
             </h1>
@@ -216,14 +263,18 @@ export default function ArtworkDetails() {
           </div>
 
           <div className="border-t border-b border-gray-800/60 py-4">
-            <p className="text-[11px] uppercase tracking-widest text-gray-400 mb-1">Est. Value</p>
+            <p className="text-[11px] uppercase tracking-widest text-gray-400 mb-1">
+              Est. Value
+            </p>
             <p className="text-4xl font-serif font-medium text-[#C5A880]">
               ${artwork.price?.toLocaleString()}
             </p>
           </div>
 
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-gray-400 mb-2">The Story</p>
+            <p className="text-[11px] uppercase tracking-widest text-gray-400 mb-2">
+              The Story
+            </p>
             <p className="text-sm font-light leading-relaxed text-gray-300">
               {artwork.description}
             </p>
@@ -231,13 +282,24 @@ export default function ArtworkDetails() {
 
           <div className="grid grid-cols-2 gap-4 bg-[#111827]/40 border border-gray-800/40 p-4 rounded-xl">
             <div>
-              <span className="text-[10px] uppercase tracking-wider text-gray-500 block">Catalog Style</span>
-              <span className="text-sm text-gray-200 font-medium">{artwork.category}</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-500 block">
+                Catalog Style
+              </span>
+              <span className="text-sm text-gray-200 font-medium">
+                {artwork.category}
+              </span>
             </div>
             <div>
-              <span className="text-[10px] uppercase tracking-wider text-gray-500 block">Released</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-500 block">
+                Released
+              </span>
               <span className="text-sm text-gray-200 font-medium">
-                {artwork.createdAt ? new Date(artwork.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "N/A"}
+                {artwork.createdAt
+                  ? new Date(artwork.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "N/A"}
               </span>
             </div>
           </div>
@@ -260,27 +322,30 @@ export default function ArtworkDetails() {
               </div>
             )}
 
-           
-          <button
-  onClick={() => router.push(`/purchase?artworkId=${artwork?._id}&userId=${user?.id}`)}
-  disabled={!canPurchase || purchasing}
-  className={`mt-5 w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-xs uppercase tracking-widest font-bold transition-all ${
-    canPurchase
-      ? "bg-[#C5A880] text-[#0B0F19] hover:bg-[#b3956d] shadow-lg shadow-[#C5A880]/10"
-      : "bg-gray-800 text-gray-500 cursor-not-allowed"
-  }`}
->
-  {purchasing ? (
-    <Loader2 size={14} className="animate-spin" />
-  ) : purchaseSuccess ? (
-    "Acquired Successfully"
-  ) : (
-    <>
-      <ShoppingBag size={14} /> Acquire Artwork · ${artwork.price?.toLocaleString()}
-    </>
-  )}
-</button>
-           
+            <button
+              onClick={() =>
+                router.push(
+                  `/purchase?artworkId=${artwork?._id}&userId=${user?.id}`,
+                )
+              }
+              disabled={!canPurchase || purchasing}
+              className={`mt-5 w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-xs uppercase tracking-widest font-bold transition-all ${
+                canPurchase
+                  ? "bg-[#C5A880] text-[#0B0F19] hover:bg-[#b3956d] shadow-lg shadow-[#C5A880]/10"
+                  : "bg-gray-800 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              {purchasing ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : purchaseSuccess ? (
+                "Acquired Successfully"
+              ) : (
+                <>
+                  <ShoppingBag size={14} /> Acquire Artwork · $
+                  {artwork.price?.toLocaleString()}
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -290,14 +355,23 @@ export default function ArtworkDetails() {
         <div className="max-w-3xl">
           <div className="flex items-center gap-2 mb-8">
             <MessageSquare size={18} className="text-[#C5A880]" />
-            <h2 className="text-xl font-serif font-medium text-gray-100">Collector Reviews & Thoughts</h2>
-            <span className="text-xs bg-gray-800 px-2 py-0.5 rounded-full text-gray-400">{reviews.length}</span>
+            <h2 className="text-xl font-serif font-medium text-gray-100">
+              Collector Reviews & Thoughts
+            </h2>
+            <span className="text-xs bg-gray-800 px-2 py-0.5 rounded-full text-gray-400">
+              {reviews.length}
+            </span>
           </div>
 
           {isLoggedIn ? (
-            <form onSubmit={handleAddReview} className="bg-[#111827]/40 border border-gray-800/60 p-5 rounded-xl mb-10">
-              <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-3">Share your perspective</p>
-              
+            <form
+              onSubmit={handleAddReview}
+              className="bg-[#111827]/40 border border-gray-800/60 p-5 rounded-xl mb-10"
+            >
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-3">
+                Share your perspective
+              </p>
+
               <div className="flex items-center gap-1.5 mb-4">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -306,10 +380,18 @@ export default function ArtworkDetails() {
                     onClick={() => setNewRating(star)}
                     className="text-gray-600 hover:text-[#C5A880] transition-colors"
                   >
-                    <Star size={16} fill={star <= newRating ? "#C5A880" : "transparent"} className={star <= newRating ? "text-[#C5A880]" : "text-gray-600"} />
+                    <Star
+                      size={16}
+                      fill={star <= newRating ? "#C5A880" : "transparent"}
+                      className={
+                        star <= newRating ? "text-[#C5A880]" : "text-gray-600"
+                      }
+                    />
                   </button>
                 ))}
-                <span className="text-xs text-gray-400 ml-2">({newRating} out of 5)</span>
+                <span className="text-xs text-gray-400 ml-2">
+                  ({newRating} out of 5)
+                </span>
               </div>
 
               <div className="relative">
@@ -336,31 +418,40 @@ export default function ArtworkDetails() {
 
           <div className="space-y-6">
             {reviews.map((rev) => (
-              <div key={rev.id} className="border-b border-gray-800/40 pb-6 last:border-0">
+              <div
+                key={rev.id}
+                className="border-b border-gray-800/40 pb-6 last:border-0"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-200">{rev.name}</h4>
+                    <h4 className="text-sm font-medium text-gray-200">
+                      {rev.name}
+                    </h4>
                     <div className="flex items-center gap-1 mt-0.5">
                       {[...Array(5)].map((_, idx) => (
                         <Star
                           key={idx}
                           size={10}
                           fill={idx < rev.rating ? "#C5A880" : "transparent"}
-                          className={idx < rev.rating ? "text-[#C5A880]" : "text-gray-700"}
+                          className={
+                            idx < rev.rating
+                              ? "text-[#C5A880]"
+                              : "text-gray-700"
+                          }
                         />
                       ))}
                     </div>
                   </div>
                   <span className="text-[11px] text-gray-500">{rev.date}</span>
                 </div>
-                <p className="text-xs text-gray-400 font-light leading-relaxed">{rev.comment}</p>
+                <p className="text-xs text-gray-400 font-light leading-relaxed">
+                  {rev.comment}
+                </p>
               </div>
             ))}
           </div>
-
         </div>
       </div>
-
     </div>
   );
 }

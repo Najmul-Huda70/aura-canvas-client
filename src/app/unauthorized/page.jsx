@@ -2,86 +2,119 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Lock, ArrowLeft, LogIn } from "lucide-react";
+import { Lock, LogIn, Home } from "lucide-react"; // Home icon import করা হয়েছে
 import Link from "next/link";
 
 export default function UnauthorizedPage() {
+  // Container variants for clean, staggered orchestration
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 30, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 75, damping: 12 },
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white flex flex-col items-center justify-center px-4 overflow-hidden">
-      <div className="text-center max-w-md w-full">
-        
-        {/* Border styling matches your card wrappers */}
+    <div className="min-h-screen bg-[#0B0F19] text-white flex flex-col items-center justify-center px-4 overflow-hidden relative select-none">
+      
+      {/* Dynamic Background Atmosphere */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(197,168,128,0.02)_0%,transparent_65%)] pointer-events-none" />
+
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="text-center max-w-md w-full relative z-10"
+      >
+        {/* Floating Lock Icon Wrapper */}
         <motion.div 
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 120, damping: 15 }}
-          className="w-20 h-20 bg-[#C5A880]/10 border border-[#C5A880]/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-[#C5A880]"
+          variants={itemVariants}
+          className="w-20 h-20 bg-[#C5A880]/5 border border-[#C5A880]/15 rounded-2xl flex items-center justify-center mx-auto mb-8 text-[#C5A880] shadow-[0_0_30px_rgba(197,168,128,0.02)]"
         >
           <motion.div
-            animate={{ y: [0, -4, 0] }}
-            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+            animate={{ 
+              scale: [1, 1.05, 1],
+              y: [0, -4, 0]
+            }}
+            transition={{ 
+              repeat: Infinity, 
+              duration: 3, 
+              ease: "easeInOut" 
+            }}
           >
-            <Lock size={36} />
+            <Lock size={36} strokeWidth={1.5} />
           </motion.div>
         </motion.div>
 
-        {/* Text color customized using your main project highlight token [#C5A880] */}
+        {/* Cinematic 401 Headline */}
         <motion.h1 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#C5A880] to-amber-600 tracking-tight"
+          variants={itemVariants}
+          className="text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-[#C5A880] via-[#C5A880]/80 to-transparent tracking-tighter leading-none"
         >
           401
         </motion.h1>
 
+        {/* Subtle Typography Section */}
         <motion.h2 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.4 }}
-          className="text-2xl font-bold mt-4 text-gray-100"
+          variants={itemVariants}
+          className="text-xl font-semibold mt-6 text-gray-200 tracking-wide"
         >
-          Unauthorized Access
+          Authentication Required
         </motion.h2>
 
         <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.4 }}
-          className="text-gray-400 mt-2 text-sm leading-relaxed"
+          variants={itemVariants}
+          className="text-gray-400 mt-2 text-sm leading-relaxed max-w-sm mx-auto font-light"
         >
-          You do not have permission to view this page. Please log in with valid credentials to gain access.
+          You do not have permission to view this gallery page. Please log in with valid credentials to gain full access.
         </motion.p>
 
+        {/* Animated Action Buttons */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
+          variants={itemVariants} 
           className="mt-8 flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <Link href="/login" className="w-full sm:w-auto" passHref>
+          {/* Primary Action - Golden Button */}
+          <Link href="/login" passHref className="w-full sm:w-auto">
             <motion.button 
-              whileHover={{ scale: 1.03 }}
+              whileHover={{ 
+                scale: 1.02,
+                boxShadow: "0 10px 25px -5px rgba(197,168,128,0.1)"
+              }}
               whileTap={{ scale: 0.98 }}
-              className="cursor-pointer w-full flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#C5A880] to-amber-700 text-black font-semibold rounded-lg text-sm transition-all duration-200 shadow-lg shadow-[#C5A880]/10"
+              className="cursor-pointer w-full flex items-center justify-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#C5A880] to-[#b3956d] font-semibold rounded-xl text-xs uppercase tracking-widest text-[#0B0F19] transition-all duration-300"
             >
-              <LogIn size={16} />
+              <LogIn size={14} strokeWidth={2.5} />
               Go to Login
             </motion.button>
           </Link>
           
-          <Link href="/" className="w-full sm:w-auto" passHref>
+          {/* Secondary Action - Dark Styled Home Button */}
+          <Link href="/" passHref className="w-full sm:w-auto">
             <motion.button 
-              whileHover={{ scale: 1.03 }}
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="cursor-pointer w-full flex items-center justify-center gap-2 px-6 py-2.5 bg-[#161F30] hover:bg-[#1E293B] font-medium rounded-lg text-sm transition-all duration-200 text-gray-300 border border-gray-700/40"
+              className="cursor-pointer w-full flex items-center justify-center gap-2.5 px-6 py-3 bg-[#161F30] hover:bg-[#1E293B] font-medium rounded-xl text-xs uppercase tracking-widest text-gray-300 border border-gray-700/40 transition-all duration-300"
             >
-              <ArrowLeft size={16} />
-              Back to Home
+              <Home size={14} strokeWidth={2} />
+              Return to Home
             </motion.button>
           </Link>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }
