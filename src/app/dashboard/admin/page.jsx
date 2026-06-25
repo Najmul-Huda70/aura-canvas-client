@@ -18,9 +18,10 @@ import {
   PieChart,
   LogOut,
   Loader2,
+  Check,
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
@@ -100,8 +101,9 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [artworks, setArtworks] = useState([]);
   const [toast, setToast] = useState(null);
-  const { data: session ,isPending} = useSession();
+  const { data: session, isPending } = useSession();
   const user = session?.user;
+  const router = useRouter();
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
@@ -175,10 +177,7 @@ export default function AdminDashboard() {
     showToast(`User role updated to ${newRole}`);
   };
 
-  const handleDeleteArtwork = (artId, title) => {
-    setArtworks((prev) => prev.filter((a) => a.id !== artId));
-    showToast(`"${title}" has been removed`);
-  };
+ 
   useEffect(() => {
     if (isPending) return;
     if (!user) {
@@ -187,7 +186,57 @@ export default function AdminDashboard() {
       redirect("/forbidden");
     }
   }, [user, isPending]);
+  const handleApproveArtwork = async (artId) => {
+  try {
+    const res = await fetch(`${BASE_URL}/artworks?artId=${artId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: "available" }),
+    });
 
+    const resData = await res.json();
+
+    if (res.ok && resData.success) {
+      setArtworks((prevArtworks) =>
+        prevArtworks.map((art) =>
+          art._id === artId ? { ...art, status: "available" } : art,
+        ),
+      );
+      showToast("Artwork approved and published successfully!");
+    } else {
+      showToast(resData.message || "Failed to approve artwork", "error");
+    }
+    router.push('/dashboard/admin');
+  } catch (error) {
+    console.error("Approval error:", error);
+    showToast("Server error. Could not approve artwork.", "error");
+  }
+};
+
+const handleDeleteArtwork = async (artId, title) => {
+  try {
+    const res = await fetch(`${BASE_URL}/artworks/${artId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const resData = await res.json();
+
+    if (res.ok && resData.success) {
+      setArtworks((prev) => prev.filter((a) => a._id !== artId));
+      showToast(`"${title}" has been deleted`);
+    } else {
+      showToast(resData.message || "Failed to delete artwork", "error");
+    }
+    router.push('/dashboard/admin');
+  } catch (error) {
+    console.error("delete error:", error);
+    showToast("Server error. Could not delete artwork.", "error");
+  }
+};
   if (!user) {
     return (
       <div className="min-h-screen bg-[#070B13] flex items-center justify-center text-gray-400 text-xs">
@@ -199,7 +248,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen mt-20 bg-[#070B13] text-gray-100 flex flex-col md:flex-row p-4 md:p-6 gap-6 font-sans">
       {/* ─── LEFT SIDEBAR (Matching User/Artist Style) ─── */}
-      <aside className="w-full md:w-65 flex flex-col gap-4 shrink-0">
+      <aside className="hidden lg:flex w-65 flex-col gap-4 shrink-0 sticky top-24">
         {/* Admin Profile Card */}
         <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-5 flex flex-col items-center text-center shadow-lg relative overflow-hidden">
           <div className="relative mt-2">
@@ -218,7 +267,6 @@ export default function AdminDashboard() {
             <Shield size={11} /> {user?.role.toUpperCase()}
           </span>
         </div>
-
         {/* Navigation Block */}
         <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-2 flex flex-col gap-1 shadow-lg">
           <nav className="flex flex-col gap-0.5">
@@ -254,7 +302,6 @@ export default function AdminDashboard() {
             })}
           </nav>
         </div>
-
         {/* Sign Out */}
         <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-2 shadow-lg">
           <button className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-rose-400/90 hover:bg-rose-950/20 hover:text-rose-400 transition-colors group">
@@ -268,7 +315,7 @@ export default function AdminDashboard() {
       </aside>
 
       {/* ─── RIGHT MAIN PANEL ─── */}
-      <main className="flex-1 bg-[#090E17]/40 border border-gray-800/50 rounded-2xl p-5 md:p-6 shadow-xl overflow-x-hidden min-h-[530px]">
+      <main className="flex-1 p-5 md:p-6 shadow-xl overflow-x-hidden min-h-[530px]">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -428,7 +475,7 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="text-xs divide-y divide-gray-800/30">
-                      {users.map((user,index) => (
+                      {users.map((user, index) => (
                         <tr
                           key={index}
                           className="hover:bg-gray-800/10 transition-colors"
@@ -478,62 +525,100 @@ export default function AdminDashboard() {
 
             {/* ─── TAB 3: MANAGE ALL ARTWORKS ─── */}
             {activeTab === "artworks" && (
-              <>
+              <div className="space-y-6 w-full max-w-full">
                 <div>
                   <h2 className="text-xl font-medium text-gray-100">
                     Manage All Artworks
                   </h2>
                   <p className="text-xs text-gray-500">
-                    Global control to monitor and purge marketplace assets
+                    Global control to monitor, approve, and purge marketplace
+                    assets
                   </p>
                 </div>
-                <div className="border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden">
-                  <table className="w-full border-collapse text-left">
-                    <thead>
-                      <tr className="border-b border-gray-800/60 bg-[#070B13]/40 text-[11px] text-gray-500 uppercase tracking-wider">
-                        <th className="p-4 font-normal">Title</th>
-                        <th className="p-4 font-normal">Artist Name</th>
-                        <th className="p-4 font-normal">Category</th>
-                        <th className="p-4 font-normal">Price</th>
-                        <th className="p-4 font-normal text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-xs divide-y divide-gray-800/30">
-                      {artworks.map((art) => (
-                        <tr
-                          key={art.id}
-                          className="hover:bg-gray-800/10 transition-colors"
-                        >
-                          <td className="p-4 font-medium text-gray-200">
-                            {art.title}
-                          </td>
-                          <td className="p-4 text-gray-400">
-                            {art.artistName}
-                          </td>
-                          <td className="p-4">
-                            <span className="text-gray-500 bg-gray-800/40 border border-gray-800 px-2 py-0.5 rounded-md">
-                              {art.category}
-                            </span>
-                          </td>
-                          <td className="p-4 text-[#C5A880] font-semibold">
-                            ${art.price.toLocaleString()}
-                          </td>
-                          <td className="p-4 text-right">
-                            <button
-                              onClick={() =>
-                                handleDeleteArtwork(art.id, art.title)
-                              }
-                              className="p-1.5 border border-gray-800 rounded-lg text-gray-400 hover:text-rose-400 hover:border-rose-950/50"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </td>
+
+                <div className="border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden w-full">
+                  <div className="overflow-x-auto w-full scrollbar-thin scrollbar-thumb-gray-800">
+                    <table className="w-full border-collapse text-left min-w-[700px]">
+                      <thead>
+                        <tr className="border-b border-gray-800/60 bg-[#070B13]/40 text-[11px] text-gray-500 uppercase tracking-wider">
+                          <th className="p-4 font-normal">Title</th>
+                          <th className="p-4 font-normal">Artist Name</th>
+                          <th className="p-4 font-normal">Category</th>
+                          <th className="p-4 font-normal">Price</th>
+                          <th className="p-4 font-normal">Status</th>
+                          <th className="p-4 font-normal text-right">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="text-xs divide-y divide-gray-800/30">
+                        {artworks.map((art, index) => (
+                          <tr
+                            key={index}
+                            className="hover:bg-gray-800/10 transition-colors"
+                          >
+                            <td className="p-4 font-medium text-gray-200 max-w-[180px] truncate">
+                              {art.title}
+                            </td>
+                            <td className="p-4 text-gray-400 truncate max-w-[140px]">
+                              {art.artistName}
+                            </td>
+                            <td className="p-4 whitespace-nowrap">
+                              <span className="text-gray-400 bg-gray-800/40 border border-gray-800 px-2 py-0.5 rounded-md text-[11px]">
+                                {art.category}
+                              </span>
+                            </td>
+                            <td className="p-4 text-[#C5A880] font-semibold whitespace-nowrap">
+                              ${art.price.toLocaleString()}
+                            </td>
+
+                            <td className="p-4 whitespace-nowrap">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border ${
+                                  art.status === "available"
+                                    ? "bg-emerald-950/30 border-emerald-500/20 text-emerald-400"
+                                    : art.status === "pending"
+                                      ? "bg-amber-950/30 border-amber-500/20 text-amber-400"
+                                      : "bg-rose-950/30 border-rose-500/20 text-rose-400"
+                                }`}
+                              >
+                                {art.status || "available"}
+                              </span>
+                            </td>
+
+                            <td className="p-4 text-right whitespace-nowrap">
+                              <div className="flex justify-end gap-2">
+                                {art.status === "pending" && (
+                                  <button
+                                    onClick={() =>
+                                      handleApproveArtwork(art._id)
+                                    } // আপনার লজিক অনুযায়ী ফাংশন কল করুন
+                                    title="Approve Artwork"
+                                    className="p-1.5 border border-gray-800 bg-emerald-950/10 rounded-lg text-emerald-500 hover:text-emerald-400 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-colors"
+                                  >
+                                    <Check size={13} />{" "}
+                                    {/* Lucide icons থেকে Check ইমপোর্ট করে নিবেন */}
+                                  </button>
+                                )}
+
+                                <button
+                                  onClick={() =>
+                                    handleDeleteArtwork(art._id, art.title)
+                                  }
+                                  title="Delete Artwork"
+                                  className="p-1.5 border border-gray-800 rounded-lg text-gray-400 hover:text-rose-400 hover:border-rose-950/50 transition-colors"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </>
+              </div>
             )}
 
             {/* ─── TAB 4: VIEW ALL TRANSACTIONS ─── */}
@@ -594,7 +679,33 @@ export default function AdminDashboard() {
           </motion.div>
         </AnimatePresence>
       </main>
-
+      {/* Mobile Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+        <div className="m-2 rounded-2xl border border-gray-800/60 bg-[#090E17]/95 backdrop-blur-xl">
+          <div className="grid grid-cols-4">
+            {NAV_ITEMS.map(({ key, icon: Icon }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`flex flex-col items-center justify-center py-3 ${
+                  activeTab === key ? "text-[#C5A880]" : "text-gray-500"
+                }`}
+              >
+                <Icon size={18} />
+                <span className="text-[10px] mt-1">
+                  {key === "analytics"
+                    ? "Analytics"
+                    : key === "users"
+                      ? "Users"
+                      : key === "artworks"
+                        ? "Artworks"
+                        : "Transactions"}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
       {/* Admin Notification Toast */}
       <AnimatePresence>
         {toast && <Toast message={toast} onClose={() => setToast(null)} />}

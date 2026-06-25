@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PlusCircle, Upload, Loader2, ImageIcon, RotateCcw } from "lucide-react";
 
@@ -96,7 +96,22 @@ export default function AddArtwork({ setArtworks, setActiveTab, showToast, userI
   const [category, setCategory] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+const [categories, setCategories] = useState([]);
+  useEffect(() => {
+    fetch(`${BASE_URL}/category`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          setCategories(data.data);
+        } else if (Array.isArray(data)) {
+          setCategories(data);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching categories:", error);
+      });
+  }, []);
+  console.log("category:", categories);
   const handlePublishArtwork = async (e) => {
     e.preventDefault();
     
@@ -130,7 +145,7 @@ export default function AddArtwork({ setArtworks, setActiveTab, showToast, userI
         const newlyCreated = {
           _id: resData.artworkId || resData.data?._id, 
           ...payload,
-          status: "available"
+          status: "pending"
         };
 
         setArtworks(p => [newlyCreated, ...p]);
@@ -177,7 +192,7 @@ export default function AddArtwork({ setArtworks, setActiveTab, showToast, userI
               <label className="block text-[11px] text-gray-400 mb-1.5">Category</label>
               <select value={category} onChange={e => setCategory(e.target.value)} className={inputClass}>
                 <option value="">Select Category</option>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                {categories.map((c,index)=> <option key={index} value={c.slug}>{c.name}</option>)}
               </select>
             </div>
           </div>

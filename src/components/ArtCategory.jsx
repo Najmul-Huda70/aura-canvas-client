@@ -1,16 +1,7 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Palette, Monitor, Component, Orbit, Camera, Sparkles } from "lucide-react";
-
-const categories = [
-  { id: 1, title: "Painting", subtitle: "Oil & Watercolors", icon: Palette },
-  { id: 2, title: "Digital", subtitle: "3D & Illustration", icon: Monitor },
-  { id: 3, title: "Sculpture", subtitle: "Clay & Wireframe", icon: Component },
-  { id: 4, title: "Abstract", subtitle: "Mixed Media", icon: Orbit },
-  { id: 5, title: "Photography", subtitle: "Cinematic & Realism", icon: Camera },
-  { id: 6, title: "AI Generated", subtitle: "Neural Art Matrix", icon: Sparkles },
-];
+import * as LucideIcons from 'lucide-react';
 
 const containerVariants = {
   hidden: {},
@@ -29,9 +20,9 @@ const cardVariants = {
     transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
   },
 };
-
+const BASE_URL=process.env.NEXT_PUBLIC_SERVER_URL;
 function CategoryCard({ cat }) {
-  const Icon = cat.icon;
+  const Icon = LucideIcons[cat.icon] || LucideIcons.HelpCircle;
 
   return (
     <motion.div
@@ -91,16 +82,14 @@ function CategoryCard({ cat }) {
           </motion.div>
         </motion.div>
 
-        {/* Title */}
         <motion.h3
           className="text-sm font-serif font-medium text-gray-100 group-hover:text-[#C5A880] transition-colors duration-300"
         >
-          {cat.title}
+          {cat.name}
         </motion.h3>
 
-        {/* Subtitle */}
         <p className="text-[10px] text-gray-500 mt-0.5 font-sans font-light uppercase tracking-wider group-hover:text-gray-400 transition-colors duration-300">
-          {cat.subtitle}
+          {cat.description}
         </p>
 
         {/* Bottom underline reveal */}
@@ -116,6 +105,26 @@ function CategoryCard({ cat }) {
 }
 
 export default function ArtCategories() {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/category`) 
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          setCategories(data.data);
+        } else if (Array.isArray(data)) {
+          setCategories(data);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching categories:", error);
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <section className="bg-[#0B0F19] text-[#F3F4F6] py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
@@ -135,17 +144,23 @@ export default function ArtCategories() {
           </p>
         </motion.div>
 
-        {/* Grid */}
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {categories.map((cat) => (
-            <CategoryCard key={cat.id} cat={cat} />
-          ))}
-        </motion.div>
+        {/* Loading State */}
+        {loading ? (
+          <div className="text-center text-gray-500 font-sans text-sm tracking-wider">
+            Loading Categories...
+          </div>
+        ) : (
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {categories.map((cat) => (
+              <CategoryCard key={cat._id} cat={cat} />
+            ))}
+          </motion.div>
+        )}
 
       </div>
     </section>

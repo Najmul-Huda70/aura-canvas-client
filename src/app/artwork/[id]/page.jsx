@@ -91,7 +91,7 @@ useEffect(() => {
     setIsTimeout(false); 
     
     try {
-      const res = await fetch(`${BASE_URL}/artworks?id=${id}`, {
+      const res = await fetch(`${BASE_URL}/aprovedArtworks?id=${id}`, {
         method: "GET",
         signal: controller.signal,
         headers: {
@@ -124,8 +124,6 @@ useEffect(() => {
       }
     } catch (error) {
       if (error.name === 'AbortError') {
-        // 🎯 যদি ক্লিনআপের কারণে রিকোয়েস্ট কাটা পড়ে, তবে ৫MD৪ দেখাবে না। 
-        // শুধুমাত্র ১৫ সেকেন্ড পার হয়ে টাইমার রিকোয়েস্ট কাটলেই ৫MD৪ দেখাবে।
         if (!isAbortedByCleanup) {
           setIsTimeout(true);
         }
@@ -158,16 +156,39 @@ useEffect(() => {
     artwork?.status === "available" &&
     !purchaseSuccess;
 
-  // async function handlePurchase() {
-  //   if (!canPurchase) return;
-  //   setPurchasing(true);
-  //   try {
-  //     await new Promise((r) => setTimeout(r, 1200));
-  //     setPurchaseSuccess(true);
-  //   } finally {
-  //     setPurchasing(false);
-  //   }
-  // }
+const handleBuyArtwork = async (currentArtwork) => {
+  if (!currentArtwork) return;
+  
+  try {
+    setPurchasing(true);
+
+   const res = await fetch('/api/checkout_sessions/artwork', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        artworkId: currentArtwork._id, 
+        title: currentArtwork.title,      
+        price: currentArtwork.price,      
+        imageUrl: currentArtwork.imageUrl
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.url) {
+      window.location.href = data.url; 
+    } else {
+      console.error("Payment error:", data.error);
+      alert(data.error || "Something went wrong!");
+      setPurchasing(false);
+    }
+  } catch (error) {
+    console.error("Failed to initiate checkout:", error);
+    setPurchasing(false);
+  }
+};
 
   const handleAddReview = (e) => {
     e.preventDefault();
@@ -229,7 +250,6 @@ if (isTimeout || notFound || !artwork) return <GatewayTimeoutPage />;
               animate={{ opacity: imgLoaded ? 1 : 0 }}
               transition={{ duration: 0.5 }}
             />
-            {/* ─── ২. প্রোপার্টির নাম ফিক্স: artwork.featured থেকে artwork.features করা হলো ─── */}
             {artwork.features && (
               <div className="absolute top-4 right-4 flex items-center gap-1 bg-[#C5A880] text-[#0B0F19] text-[10px] uppercase font-bold px-2.5 py-1 rounded-sm tracking-wider shadow-lg">
                 <Star size={10} fill="currentColor" />
@@ -321,31 +341,28 @@ if (isTimeout || notFound || !artwork) return <GatewayTimeoutPage />;
                 </button>
               </div>
             )}
-
-            <button
-              onClick={() =>
-                router.push(
-                  `/purchase?artworkId=${artwork?._id}&userId=${user?.id}`,
-                )
-              }
-              disabled={!canPurchase || purchasing}
-              className={`mt-5 w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-xs uppercase tracking-widest font-bold transition-all ${
-                canPurchase
-                  ? "bg-[#C5A880] text-[#0B0F19] hover:bg-[#b3956d] shadow-lg shadow-[#C5A880]/10"
-                  : "bg-gray-800 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              {purchasing ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : purchaseSuccess ? (
-                "Acquired Successfully"
-              ) : (
-                <>
-                  <ShoppingBag size={14} /> Acquire Artwork · $
-                  {artwork.price?.toLocaleString()}
-                </>
-              )}
-            </button>
+            {/* artwork?._id */}
+              <button
+  type="button"
+  onClick={() => handleBuyArtwork(artwork)} 
+  disabled={!canPurchase || purchasing}
+  className={`mt-5 w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-xs uppercase tracking-widest font-bold transition-all ${
+    canPurchase
+      ? "bg-[#C5A880] text-[#0B0F19] hover:bg-[#b3956d] shadow-lg shadow-[#C5A880]/10"
+      : "bg-gray-800 text-gray-500 cursor-not-allowed"
+  }`}
+>
+  {purchasing ? (
+    <Loader2 size={14} className="animate-spin" />
+  ) : purchaseSuccess ? (
+    "Acquired Successfully"
+  ) : (
+    <>
+      <ShoppingBag size={14} /> Acquire Artwork · ${artwork.price?.toLocaleString()}
+    </>
+  )}
+</button>
+          
           </div>
         </div>
       </div>

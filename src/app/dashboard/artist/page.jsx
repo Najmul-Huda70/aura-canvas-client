@@ -34,33 +34,7 @@ import AddArtwork from "@/components/dashboard/artist/AddArtwork";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMGBB_API;
-const CATEGORIES = [
-  "Landscape",
-  "Abstract",
-  "Watercolor",
-  "Oil",
-  "Portrait",
-  "Digital",
-  "Sculpture",
-  "Photography",
-];
 
-const SALES_HISTORY = [
-  {
-    id: "s1",
-    artworkTitle: "Solitude at 3AM",
-    buyer: "Lucas Ferreira",
-    date: "2024-11-22",
-    amount: 520,
-  },
-  {
-    id: "s2",
-    artworkTitle: "Watercolor Monsoon",
-    buyer: "Arjun Bose",
-    date: "2024-12-04",
-    amount: 640,
-  },
-];
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
   visible: {
@@ -103,7 +77,7 @@ function Toast({ message, type = "success", onClose }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl text-sm ${
+      className={`fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl text-sm ${
         type === "success"
           ? "bg-emerald-950/90 border-emerald-500/30 text-emerald-300"
           : "bg-rose-950/90 border-rose-500/30 text-rose-300"
@@ -261,15 +235,14 @@ export function ImageUploadZone({ onUpload, previewUrl, setPreviewUrl }) {
   );
 }
 
-function ArtworkForm({ initial, onSubmit, onCancel, submitLabel }) {
-  const [title, setTitle] = useState(initial?.title || "");
-  const [desc, setDesc] = useState(initial?.description || "");
-  const [price, setPrice] = useState(initial?.price || "");
-  const [category, setCategory] = useState(initial?.category || "");
-  const [imageUrl, setImageUrl] = useState(initial?.imageUrl || "");
-
+function ArtworkForm({onSubmit, onCancel, submitLabel, categories }) {
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState( "");
+  const [price, setPrice] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+console.log('formdata category:',categories);
   const inputClass =
-    "w-full bg-[#070B13] border border-gray-800/80 focus:border-[#C5A880]/40 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none transition-colors";
+    "w-full bg-[#070B13] border border-gray-800/80 focus:border-[#C5A880]/40 rounded-xl px-4 py-3 sm:py-2.5 text-sm text-gray-200 focus:outline-none transition-all appearance-none";
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -284,31 +257,41 @@ function ArtworkForm({ initial, onSubmit, onCancel, submitLabel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 text-left">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 text-left w-full max-w-full"
+    >
+      {/* Title */}
       <div>
-        <label className="block text-[11px] text-gray-400 mb-1.5">
+        <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5 font-medium">
           Artwork Title
         </label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className={inputClass}
+          placeholder="Enter masterpiece title"
         />
       </div>
+
+      {/* Description */}
       <div>
-        <label className="block text-[11px] text-gray-400 mb-1.5">
+        <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5 font-medium">
           Description
         </label>
         <textarea
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           rows={3}
-          className={`${inputClass} resize-none`}
+          className={`${inputClass} resize-none leading-relaxed`}
+          placeholder="Describe the story and emotions behind this artwork..."
         />
       </div>
+
+      {/* Price & Category Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[11px] text-gray-400 mb-1.5">
+          <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5 font-medium">
             Price ($ USD)
           </label>
           <input
@@ -316,28 +299,51 @@ function ArtworkForm({ initial, onSubmit, onCancel, submitLabel }) {
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             className={inputClass}
+            placeholder="0.00"
           />
         </div>
         <div>
-          <label className="block text-[11px] text-gray-400 mb-1.5">
+          <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5 font-medium">
             Category
           </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Select Category</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
+          <div className="relative">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={`${inputClass} cursor-pointer pr-10`}
+            >
+              <option value="" className="bg-[#070B13]">
+                Select Category
               </option>
-            ))}
-          </select>
+              {categories.map((c, index) => (
+                <option key={index} value={c.slug} className="bg-[#070B13]">
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            {/* Custom chevron dropdown icon for premium look */}
+            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-500">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
-      <div>
-        <label className="block text-[11px] text-gray-400 mb-1.5">
+
+      {/* Image Upload Zone */}
+      <div className="w-full overflow-hidden">
+        <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5 font-medium">
           Upload Image
         </label>
         <ImageUploadZone
@@ -346,19 +352,21 @@ function ArtworkForm({ initial, onSubmit, onCancel, submitLabel }) {
           setPreviewUrl={setImageUrl}
         />
       </div>
-      <div className="flex items-center gap-3 pt-2">
-        <button
-          type="submit"
-          className="px-5 py-2.5 rounded-xl bg-[#C5A880] text-[#070B13] text-xs font-semibold hover:bg-[#bfa075] transition-colors"
-        >
-          {submitLabel}
-        </button>
+
+      {/* Responsive Form Action Buttons */}
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-start gap-2.5 pt-3 w-full">
         <button
           type="button"
           onClick={onCancel}
-          className="px-5 py-2.5 rounded-xl border border-gray-800 text-gray-400 text-xs hover:bg-gray-800/30"
+          className="w-full sm:w-auto text-center px-6 py-3 sm:py-2.5 rounded-xl border border-gray-800 text-gray-400 text-xs font-semibold hover:bg-gray-800/30 active:bg-gray-800/50 transition-colors order-2 sm:order-1"
         >
           Cancel
+        </button>
+        <button
+          type="submit"
+          className="w-full sm:w-auto text-center px-6 py-3 sm:py-2.5 rounded-xl bg-[#C5A880] text-[#070B13] text-xs font-bold hover:bg-[#bfa075] active:scale-[0.98] transition-all order-1 sm:order-2 shadow-md shadow-[#C5A880]/5"
+        >
+          {submitLabel}
         </button>
       </div>
     </form>
@@ -432,10 +440,12 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
       variants={stagger}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-6 w-full max-w-full overflow-x-hidden px-1 sm:px-0"
     >
-      <div>
-        <h2 className="text-xl font-medium text-gray-100">My Artworks</h2>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-lg sm:text-xl font-medium text-gray-100">
+          My Artworks
+        </h2>
         <p className="text-xs text-gray-500">Manage your gallery collection</p>
       </div>
 
@@ -446,15 +456,15 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="border border-gray-800 bg-[#090E17]/60 p-5 rounded-xl"
+            className="border border-gray-800 bg-[#090E17]/60 p-4 sm:p-5 rounded-xl w-full"
           >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-medium text-[#C5A880]">
+            <div className="flex justify-between items-center mb-4 gap-2">
+              <h3 className="text-xs sm:text-sm font-medium text-[#C5A880] truncate">
                 Edit Artwork: {editTarget.title}
               </h3>
               <button
                 onClick={() => setEditTarget(null)}
-                className="text-xs text-gray-500 hover:text-gray-300"
+                className="text-xs text-gray-500 hover:text-gray-300 shrink-0 transition-colors"
               >
                 Cancel
               </button>
@@ -465,6 +475,7 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
               onSubmit={handleEditSubmit}
               onCancel={() => setEditTarget(null)}
               submitLabel={isUpdating ? "Saving..." : "Save Changes"}
+              categories={categories}
             />
           </motion.div>
         ) : artworks.length === 0 ? (
@@ -472,17 +483,17 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
             key="empty"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="border border-gray-800/60 rounded-xl bg-[#090E17]/20 p-12 flex flex-col items-center justify-center text-center min-h-[340px]"
+            className="border border-gray-800/60 rounded-xl bg-[#090E17]/20 p-6 sm:p-12 flex flex-col items-center justify-center text-center min-h-[300px] sm:min-h-[340px] w-full"
           >
-            <div className="w-14 h-14 bg-[#131B2A] border border-gray-800 rounded-2xl flex items-center justify-center text-[#C5A880]/60 mb-4">
-              <ImageIcon size={24} />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#131B2A] border border-gray-800 rounded-2xl flex items-center justify-center text-[#C5A880]/60 mb-4">
+              <ImageIcon size={22} />
             </div>
-            <h3 className="text-sm font-semibold text-gray-300">
+            <h3 className="text-xs sm:text-sm font-semibold text-gray-300 mb-4">
               No Artworks Found
             </h3>
             <button
               onClick={() => setActiveTab("add")}
-              className="flex items-center gap-2 px-4 py-2 bg-[#C5A880]/10 border border-[#C5A880]/20 rounded-xl text-xs font-semibold text-[#C5A880] hover:bg-[#C5A880]/20 transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#C5A880]/10 border border-[#C5A880]/20 rounded-xl text-xs font-semibold text-[#C5A880] hover:bg-[#C5A880]/20 transition-all"
             >
               <PlusCircle size={14} /> Add First Artwork
             </button>
@@ -490,40 +501,32 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
         ) : (
           <motion.div
             key="table"
-            className="border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden"
+            className="border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden w-full"
           >
-            <table className="w-full border-collapse text-left">
-              <thead>
-                <tr className="border-b border-gray-800/60 bg-[#070B13]/40 text-[11px] text-gray-500 uppercase tracking-wider">
-                  <th className="p-4 font-normal">Artwork</th>
-                  <th className="p-4 font-normal">Category</th>
-                  <th className="p-4 font-normal">Price</th>
-                  <th className="p-4 font-normal">Status</th>
-                  <th className="p-4 font-normal text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="text-xs divide-y divide-gray-800/30">
-                {artworks.map((art) => (
-                  <tr
-                    key={art._id}
-                    className="hover:bg-gray-800/10 transition-colors"
-                  >
-                    <td className="p-4 flex items-center gap-3">
-                      <img
-                        src={art.imageUrl}
-                        className="w-9 h-9 object-cover rounded-lg bg-gray-800"
-                      />
-                      <span className="font-medium text-gray-200">
-                        {art.title}
+            {/* ── MOBILE: card list ── */}
+            <div className="md:hidden divide-y divide-gray-800/30">
+              {artworks.map((art) => (
+                <div
+                  key={art._id}
+                  className="p-4 flex items-start gap-3 w-full"
+                >
+                  <img
+                    src={art.imageUrl}
+                    className="w-12 h-12 object-cover rounded-lg bg-gray-800 shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-200 text-sm truncate">
+                      {art.title}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">
+                      {art.category}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      <span className="text-xs text-[#C5A880] font-semibold">
+                        ${art.price.toLocaleString()}
                       </span>
-                    </td>
-                    <td className="p-4 text-gray-400">{art.category}</td>
-                    <td className="p-4 text-[#C5A880] font-semibold">
-                      ${art.price.toLocaleString()}
-                    </td>
-                    <td className="p-4">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border ${
+                        className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide border whitespace-nowrap ${
                           art.status === "available"
                             ? "bg-emerald-950/30 border-emerald-500/20 text-emerald-400"
                             : "bg-amber-950/30 border-amber-500/20 text-amber-400"
@@ -531,27 +534,91 @@ function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
                       >
                         {art.status || "available"}
                       </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => setEditTarget(art)}
-                          className="p-1.5 border border-gray-800 rounded-lg text-gray-400 hover:text-[#C5A880]"
-                        >
-                          <Edit3 size={13} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(art)}
-                          className="p-1.5 border border-gray-800 rounded-lg text-gray-400 hover:text-rose-400"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0 ml-1">
+                    <button
+                      onClick={() => setEditTarget(art)}
+                      className="p-2 border border-gray-800 rounded-lg text-gray-400 hover:text-[#C5A880] bg-[#070B13]/30 transition-colors"
+                    >
+                      <Edit3 size={13} />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(art)}
+                      className="p-2 border border-gray-800 rounded-lg text-gray-400 hover:text-rose-400 bg-[#070B13]/30 transition-colors"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── DESKTOP: table ── */}
+            <div className="hidden md:block overflow-x-auto w-full scrollbar-thin scrollbar-thumb-gray-800">
+              <table className="w-full border-collapse text-left min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-gray-800/60 bg-[#070B13]/40 text-[11px] text-gray-500 uppercase tracking-wider">
+                    <th className="p-4 font-normal">Artwork</th>
+                    <th className="p-4 font-normal">Category</th>
+                    <th className="p-4 font-normal">Price</th>
+                    <th className="p-4 font-normal">Status</th>
+                    <th className="p-4 font-normal text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="text-xs divide-y divide-gray-800/30">
+                  {artworks.map((art) => (
+                    <tr
+                      key={art._id}
+                      className="hover:bg-gray-800/10 transition-colors"
+                    >
+                      <td className="p-4 flex items-center gap-3 max-w-[220px]">
+                        <img
+                          src={art.imageUrl}
+                          className="w-9 h-9 object-cover rounded-lg bg-gray-800 shrink-0"
+                        />
+                        <span className="font-medium text-gray-200 truncate block">
+                          {art.title}
+                        </span>
+                      </td>
+                      <td className="p-4 text-gray-400 truncate max-w-[120px]">
+                        {art.category}
+                      </td>
+                      <td className="p-4 text-[#C5A880] font-semibold whitespace-nowrap">
+                        ${art.price.toLocaleString()}
+                      </td>
+                      <td className="p-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border ${
+                            art.status === "available"
+                              ? "bg-emerald-950/30 border-emerald-500/20 text-emerald-400"
+                              : "bg-amber-950/30 border-amber-500/20 text-amber-400"
+                          }`}
+                        >
+                          {art.status || "available"}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => setEditTarget(art)}
+                            className="p-1.5 border border-gray-800 rounded-lg text-gray-400 hover:text-[#C5A880] transition-colors"
+                          >
+                            <Edit3 size={13} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(art)}
+                            className="p-1.5 border border-gray-800 rounded-lg text-gray-400 hover:text-rose-400 transition-colors"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -602,39 +669,71 @@ function SalesHistory({ sales }) {
       </div>
       <div className="border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden">
         {sales.length > 0 ? (
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="border-b border-gray-800/60 bg-[#070B13]/40 text-[11px] text-gray-500 uppercase tracking-wider">
-                <th className="p-4 font-normal">Artwork</th>
-                <th className="p-4 font-normal">Buyer</th>
-                <th className="p-4 font-normal">Date</th>
-                <th className="p-4 font-normal">Amount</th>
-                <th className="p-4 font-normal">Status</th>
-              </tr>
-            </thead>
-            <tbody className="text-xs divide-y divide-gray-800/30">
+          <>
+            {/* ── MOBILE: card list ── */}
+            <div className="md:hidden divide-y divide-gray-800/30">
               {sales.map((s) => (
-                <tr
-                  key={s.id}
-                  className="hover:bg-gray-800/10 transition-colors"
-                >
-                  <td className="p-4 font-medium text-gray-200">
+                <div key={s.id} className="p-4 space-y-1">
+                  <p className="font-medium text-gray-200 text-sm">
                     {s.artworkTitle}
-                  </td>
-                  <td className="p-4 text-gray-400">{s.buyer}</td>
-                  <td className="p-4 text-gray-500">{formatDate(s.date)}</td>
-                  <td className="p-4 text-[#C5A880] font-semibold">
-                    ${s.amount}
-                  </td>
-                  <td className="p-4">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/30 border border-emerald-500/20 text-emerald-400 uppercase">
-                      Completed
+                  </p>
+                  <p className="text-xs text-gray-400">{s.buyer}</p>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-xs text-gray-500">
+                      {formatDate(s.date)}
                     </span>
-                  </td>
-                </tr>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[#C5A880] font-semibold">
+                        ${s.amount}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/30 border border-emerald-500/20 text-emerald-400 uppercase">
+                        Completed
+                      </span>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            {/* ── DESKTOP: table ── */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-gray-800/60 bg-[#070B13]/40 text-[11px] text-gray-500 uppercase tracking-wider">
+                    <th className="p-4 font-normal">Artwork</th>
+                    <th className="p-4 font-normal">Buyer</th>
+                    <th className="p-4 font-normal">Date</th>
+                    <th className="p-4 font-normal">Amount</th>
+                    <th className="p-4 font-normal">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="text-xs divide-y divide-gray-800/30">
+                  {sales.map((s) => (
+                    <tr
+                      key={s.id}
+                      className="hover:bg-gray-800/10 transition-colors"
+                    >
+                      <td className="p-4 font-medium text-gray-200">
+                        {s.artworkTitle}
+                      </td>
+                      <td className="p-4 text-gray-400">{s.buyer}</td>
+                      <td className="p-4 text-gray-500">
+                        {formatDate(s.date)}
+                      </td>
+                      <td className="p-4 text-[#C5A880] font-semibold">
+                        ${s.amount}
+                      </td>
+                      <td className="p-4">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/30 border border-emerald-500/20 text-emerald-400 uppercase">
+                          Completed
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center p-10 text-center max-w-md mx-auto my-10">
             <div className="w-16 h-16 bg-[#E6C594]/10 rounded-full flex items-center justify-center text-[#E6C594] mb-5 animate-pulse">
@@ -653,7 +752,6 @@ function SalesHistory({ sales }) {
                 />
               </svg>
             </div>
-
             <h3 className="text-xl font-medium text-white mb-2 tracking-wide">
               No Sales History
             </h3>
@@ -685,11 +783,8 @@ function ProfileSettings({ user }) {
     setLoading(true);
 
     try {
-      //name changes
       if (initialName !== name && name.trim() !== "") {
-        const { error: nameError } = await authClient.updateUser({
-          name: name,
-        });
+        const { error: nameError } = await authClient.updateUser({ name });
         if (nameError) {
           toast.error(`Name update failed: ${nameError.message}`);
           setLoading(false);
@@ -698,7 +793,6 @@ function ProfileSettings({ user }) {
         toast.success("Name updated successfully!");
       }
 
-      //email changes
       if (initialEmail !== email && email.trim() !== "") {
         const { error: emailError } = await authClient.changeEmail({
           newEmail: email,
@@ -711,32 +805,27 @@ function ProfileSettings({ user }) {
         toast.success("Verification email sent to new address!");
       }
 
-      //password changes
       if (currentPw || newPw || confirmPw) {
         if (newPw !== confirmPw) {
           toast.error("New passwords do not match!");
           setLoading(false);
           return;
         }
-
         if (!currentPw || !newPw) {
           toast.error("Please provide both current and new passwords.");
           setLoading(false);
           return;
         }
-
         const { error: pwError } = await authClient.changePassword({
           newPassword: newPw,
           currentPassword: currentPw,
           revokeOtherSessions: true,
         });
-
         if (pwError) {
           toast.error(`Password Error: ${pwError.message}`);
           setLoading(false);
           return;
         }
-
         toast.success("Password updated successfully!");
         setCurrentPw("");
         setNewPw("");
@@ -752,12 +841,11 @@ function ProfileSettings({ user }) {
       setLoading(false);
     }
   }
+
   const handleDelete = async () => {
     try {
       await authClient.deleteUser();
-
       toast.success("Successfully deleted!");
-
       setTimeout(() => {
         window.location.href = "/";
       }, 500);
@@ -766,6 +854,7 @@ function ProfileSettings({ user }) {
       toast.error("Something went wrong!");
     }
   };
+
   return (
     <motion.div
       variants={stagger}
@@ -780,7 +869,6 @@ function ProfileSettings({ user }) {
         </p>
       </motion.div>
 
-      {/* Avatar */}
       <motion.div variants={fadeUp} className="flex items-center gap-5">
         <div className="relative">
           <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#C5A880]/30">
@@ -807,14 +895,12 @@ function ProfileSettings({ user }) {
         </div>
       </motion.div>
 
-      {/* Profile form */}
       <motion.form
         variants={fadeUp}
         onSubmit={handleSave}
         className="space-y-5"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Name */}
           <div className="space-y-1.5">
             <label className="text-[10px] uppercase tracking-widest text-gray-500">
               Display name
@@ -825,7 +911,6 @@ function ProfileSettings({ user }) {
               className="w-full bg-[#0E1420]/80 border border-gray-800 focus:border-[#C5A880]/50 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none transition-colors"
             />
           </div>
-          {/* Email */}
           <div className="space-y-1.5">
             <label className="text-[10px] uppercase tracking-widest text-gray-500">
               Email address
@@ -839,7 +924,6 @@ function ProfileSettings({ user }) {
           </div>
         </div>
 
-        {/* Divider */}
         <div className="flex items-center gap-3 pt-2">
           <div className="flex-1 h-px bg-gray-800/60" />
           <span className="text-[10px] uppercase tracking-widest text-gray-600">
@@ -877,7 +961,6 @@ function ProfileSettings({ user }) {
           </button>
         </div>
 
-        {/* Save */}
         <div className="flex items-center gap-3 pt-2">
           <motion.button
             type="submit"
@@ -903,7 +986,6 @@ function ProfileSettings({ user }) {
         </div>
       </motion.form>
 
-      {/* Danger zone */}
       <motion.div
         variants={fadeUp}
         className="rounded-2xl border border-rose-900/30 bg-rose-950/10 p-5"
@@ -936,29 +1018,40 @@ export default function ArtistDashboard() {
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const userId = user?.id;
+  const [categories, setCategories] = useState([]);
 
+  useEffect(() => {
+    fetch(`${BASE_URL}/category`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          setCategories(data.data);
+        } else if (Array.isArray(data)) {
+          setCategories(data);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching categories:", error);
+      });
+  }, []);
+  // console.log("category:", categories);
   useEffect(() => {
     const loadDashboardData = async () => {
       if (!userId) return;
-
       try {
         setLoading(true);
-
         const [artworksRes, salesRes] = await Promise.all([
           fetch(`${BASE_URL}/artworks?userId=${userId}`),
           fetch(`${BASE_URL}/purchase?userId=${userId}`),
         ]);
-
         const artworksData = await artworksRes.json();
         const salesData = await salesRes.json();
-
-        if (artworksData && artworksData.success && artworksData.data) {
+        if (artworksData?.success && artworksData.data) {
           setArtworks(artworksData.data);
         } else {
           setArtworks([]);
         }
-
-        if (salesData && salesData.success && salesData.data) {
+        if (salesData?.success && salesData.data) {
           setSales(salesData.data);
         } else {
           setSales([]);
@@ -971,7 +1064,6 @@ export default function ArtistDashboard() {
         setLoading(false);
       }
     };
-
     loadDashboardData();
   }, [userId]);
 
@@ -979,6 +1071,7 @@ export default function ArtistDashboard() {
     (acc, curr) => acc + (curr.status === "sold" ? curr.price : 0),
     0,
   );
+
   useEffect(() => {
     if (isPending) return;
     if (!user) {
@@ -991,131 +1084,235 @@ export default function ArtistDashboard() {
   if (!user) {
     return (
       <div className="min-h-screen bg-[#070B13] flex items-center justify-center text-gray-400 text-xs">
-        <Loader2 className="animate-spin text-[#C5A880] mr-2" size={16} />{" "}
+        <Loader2 className="animate-spin text-[#C5A880] mr-2" size={16} />
         Authenticating session...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen mt-20 bg-[#070B13] text-gray-100 flex flex-col md:flex-row p-4 md:p-6 gap-6 font-sans">
-      <aside className="w-full md:w-65 flex flex-col gap-4 shrink-0">
-        <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-5 flex flex-col items-center text-center shadow-lg relative overflow-hidden">
-          <div className="relative mt-2">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-800">
+    <div className="min-h-screen bg-[#070B13] text-gray-100 font-sans">
+      {/* ── DESKTOP LAYOUT ── */}
+      <div className="hidden md:flex mt-20 p-6 gap-6 flex-row">
+        <aside className="w-64 flex flex-col gap-4 shrink-0">
+          <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-5 flex flex-col items-center text-center shadow-lg relative overflow-hidden">
+            <div className="relative mt-2">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-800">
+                <img
+                  src={user?.image || "https://via.placeholder.com/150"}
+                  alt={user?.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-[#090E17] rounded-full animate-pulse" />
+            </div>
+            <h2 className="text-base font-semibold text-gray-100 mt-3 tracking-wide">
+              {user?.name}
+            </h2>
+            <p className="text-xs text-gray-500 mb-3">{user?.email}</p>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-[#C5A880]/10 text-[#C5A880] border border-[#C5A880]/20">
+              <Palette size={11} /> ARTIST
+            </span>
+            <div className="w-full grid grid-cols-2 border-t border-gray-800/50 pt-4 mt-4 text-center">
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+                  Artworks
+                </p>
+                <p className="text-sm font-bold text-gray-200 mt-0.5">
+                  {loading ? "..." : artworks.length}
+                </p>
+              </div>
+              <div className="border-l border-gray-800/50">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+                  Earned
+                </p>
+                <p className="text-sm font-bold text-[#C5A880] mt-0.5">
+                  ${totalSpentOrEarned.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-2 flex flex-col gap-1 shadow-lg">
+            <nav className="flex flex-col gap-0.5">
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => setActiveTab(item.key)}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all group ${
+                      isActive
+                        ? "bg-[#131B2A] text-[#C5A880] border-l-2 border-[#C5A880] rounded-l-none pl-3"
+                        : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/20"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon
+                        size={14}
+                        className={
+                          isActive
+                            ? "text-[#C5A880]"
+                            : "text-gray-500 group-hover:text-gray-400"
+                        }
+                      />
+                      {item.label}
+                    </div>
+                    {isActive && (
+                      <ChevronRight size={12} className="text-[#C5A880]" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </aside>
+
+        <main className="flex-1 p-5 md:p-6 overflow-x-hidden min-h-[calc(100vh-8rem)] flex flex-col">
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center text-gray-500 text-xs gap-2">
+              <Loader2 className="animate-spin text-[#C5A880]" size={16} />{" "}
+              Loading assets...
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                variants={pageVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="w-full flex"
+              >
+                {activeTab === "artworks" && (
+                  <MyArtworks
+                    artworks={artworks}
+                    setArtworks={setArtworks}
+                    setActiveTab={setActiveTab}
+                    showToast={showToast}
+                  />
+                )}
+                {activeTab === "add" && (
+                  <AddArtwork
+                    setArtworks={setArtworks}
+                    setActiveTab={setActiveTab}
+                    showToast={showToast}
+                    userId={userId}
+                    userName={user?.name}
+                  />
+                )}
+                {activeTab === "sales" && <SalesHistory sales={sales} />}
+                {activeTab === "settings" && <ProfileSettings user={user} />}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </main>
+      </div>
+
+      {/* ── MOBILE LAYOUT ── */}
+      <div className="md:hidden flex flex-col min-h-screen pt-16 pb-20">
+        {/* Mobile top bar: user info */}
+        <div className="px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-800/50">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-xl overflow-hidden border border-gray-800">
               <img
                 src={user?.image || "https://via.placeholder.com/150"}
                 alt={user?.name}
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-[#090E17] rounded-full animate-pulse" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#070B13] rounded-full" />
           </div>
-
-          <h2 className="text-base font-semibold text-gray-100 mt-3 tracking-wide">
-            {user?.name}
-          </h2>
-          <p className="text-xs text-gray-500 mb-3">{user?.email}</p>
-
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-[#C5A880]/10 text-[#C5A880] border border-[#C5A880]/20">
-            <Palette size={11} /> ARTIST
-          </span>
-
-          <div className="w-full grid grid-cols-2 border-t border-gray-800/50 pt-4 mt-4 text-center">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-100 truncate">
+              {user?.name}
+            </p>
+            <p className="text-[11px] text-gray-500 truncate">{user?.email}</p>
+          </div>
+          <div className="flex gap-3 text-center shrink-0">
             <div>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">
-                Artworks
-              </p>
-              <p className="text-sm font-bold text-gray-200 mt-0.5">
+              <p className="text-[10px] text-gray-500 uppercase">Artworks</p>
+              <p className="text-xs font-bold text-gray-200">
                 {loading ? "..." : artworks.length}
               </p>
             </div>
-            <div className="border-l border-gray-800/50">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">
-                Earned
-              </p>
-              <p className="text-sm font-bold text-[#C5A880] mt-0.5">
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase">Earned</p>
+              <p className="text-xs font-bold text-[#C5A880]">
                 ${totalSpentOrEarned.toLocaleString()}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-[#090E17] border border-gray-800/70 rounded-2xl p-2 flex flex-col gap-1 shadow-lg">
-          <nav className="flex flex-col gap-0.5">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.key;
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => setActiveTab(item.key)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all group ${
-                    isActive
-                      ? "bg-[#131B2A] text-[#C5A880] border-l-2 border-[#C5A880] rounded-l-none pl-3"
-                      : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/20"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      size={14}
-                      className={
-                        isActive
-                          ? "text-[#C5A880]"
-                          : "text-gray-500 group-hover:text-gray-400"
-                      }
-                    />
-                    {item.label}
-                  </div>
-                  {isActive && (
-                    <ChevronRight size={12} className="text-[#C5A880]" />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </aside>
+        {/* Mobile main content */}
+        <main className="flex-1 px-4 py-5 overflow-x-hidden">
+          {loading ? (
+            <div className="flex items-center justify-center h-40 text-gray-500 text-xs gap-2">
+              <Loader2 className="animate-spin text-[#C5A880]" size={16} />{" "}
+              Loading assets...
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                variants={pageVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="w-full"
+              >
+                {activeTab === "artworks" && (
+                  <MyArtworks
+                    artworks={artworks}
+                    setArtworks={setArtworks}
+                    setActiveTab={setActiveTab}
+                    showToast={showToast}
+                  />
+                )}
+                {activeTab === "add" && (
+                  <AddArtwork
+                    setArtworks={setArtworks}
+                    setActiveTab={setActiveTab}
+                    showToast={showToast}
+                    userId={userId}
+                    userName={user?.name}
+                  />
+                )}
+                {activeTab === "sales" && <SalesHistory sales={sales} />}
+                {activeTab === "settings" && <ProfileSettings user={user} />}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </main>
 
-      <main className="flex-1 p-5 md:p-6 overflow-x-hidden min-h-255 flex flex-col">
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center text-gray-500 text-xs gap-2">
-            <Loader2 className="animate-spin text-[#C5A880]" size={16} />{" "}
-            Loading assets...
-          </div>
-        ) : (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              variants={pageVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="w-full"
-            >
-              {activeTab === "artworks" && (
-                <MyArtworks
-                  artworks={artworks}
-                  setArtworks={setArtworks}
-                  setActiveTab={setActiveTab}
-                  showToast={showToast}
+        {/* Mobile bottom navigation bar */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#090E17]/95 backdrop-blur-md border-t border-gray-800/70 flex">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => setActiveTab(item.key)}
+                className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[10px] font-medium transition-all ${
+                  isActive ? "text-[#C5A880]" : "text-gray-600"
+                }`}
+              >
+                <Icon
+                  size={18}
+                  className={isActive ? "text-[#C5A880]" : "text-gray-600"}
                 />
-              )}
-              {activeTab === "add" && (
-                <AddArtwork
-                  setArtworks={setArtworks}
-                  setActiveTab={setActiveTab}
-                  showToast={showToast}
-                  userId={userId}
-                  userName={user?.name}
-                />
-              )}
-              {activeTab === "sales" && <SalesHistory sales={sales} />}
-              {activeTab === "settings" && <ProfileSettings user={user} />}
-            </motion.div>
-          </AnimatePresence>
-        )}
-      </main>
+                <span className="leading-none">{item.label.split(" ")[0]}</span>
+                {isActive && (
+                  <span className="absolute bottom-0 w-8 h-0.5 bg-[#C5A880] rounded-full" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
       <AnimatePresence>
         {toast && (

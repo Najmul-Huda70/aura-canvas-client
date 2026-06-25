@@ -628,10 +628,11 @@ function SubscriptionTier({ currentPlan, purchaseCount }) {
               variants={fadeUp}
               whileHover={isCurrent ? {} : { y: -4 }}
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
-              className={`relative rounded-2xl border p-5 transition-all duration-200 ${isCurrent
+              className={`relative rounded-2xl border p-5 transition-all duration-200 ${
+                isCurrent
                   ? `${t.border} ${t.bg} shadow-lg ${t.glow}`
                   : "border-gray-800/60 bg-[#0E1420]/50 hover:border-gray-700"
-                }`}
+              }`}
             >
               {isCurrent && (
                 <motion.div
@@ -672,15 +673,16 @@ function SubscriptionTier({ currentPlan, purchaseCount }) {
 
               {/* Upgrade → POST to your checkout endpoint */}
               {!isCurrent && (
-                <form action="/api/checkout_sessions" method="POST">
+                <form action="/api/checkout_sessions/subscription" method="POST">
                   <input type="hidden" name="plan_id" value={key} />
                   <motion.button
                     type="submit"
                     whileTap={{ scale: 0.97 }}
-                    className={`w-full mt-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-colors ${key === "user_premium"
+                    className={`w-full mt-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-colors ${
+                      key === "user_premium"
                         ? "bg-[#C5A880] text-[#0B0F19] hover:bg-[#d4b99a]"
                         : "border border-violet-500/40 text-violet-400 hover:bg-violet-950/30"
-                      }`}
+                    }`}
                   >
                     Upgrade to {t.label}
                   </motion.button>
@@ -806,9 +808,10 @@ function ProfileSettings({ user }) {
   }
 
   const inputCls = (hasErr) =>
-    `w-full bg-[#0E1420]/80 border rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition-colors ${hasErr
-      ? "border-rose-800/60"
-      : "border-gray-800 focus:border-[#C5A880]/50"
+    `w-full bg-[#0E1420]/80 border rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition-colors ${
+      hasErr
+        ? "border-rose-800/60"
+        : "border-gray-800 focus:border-[#C5A880]/50"
     }`;
 
   return (
@@ -1085,12 +1088,13 @@ export default function UserDashboard() {
   return (
     <div className="min-h-screen bg-[#090D16] text-gray-100 antialiased">
       {/* Ambient glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-24 lg:pb-16 flex gap-6 items-start">
+   
         <div className="absolute -top-60 -left-40 w-125 h-125 rounded-full bg-[#C5A880]/5 blur-[120px]" />
         <div className="absolute bottom-0 right-0 w-75 h-75 rounded-full bg-violet-900/8 blur-[100px]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-8 sm:pt-24 pb-16 flex gap-6 items-start">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-6 sm:pt-18 pb-16 flex gap-6 items-start">
         {/* ── Desktop Sidebar ───────────────────────────────────────────── */}
         <motion.aside
           initial={{ opacity: 0, x: -20 }}
@@ -1148,10 +1152,11 @@ export default function UserDashboard() {
                   key={key}
                   onClick={() => setActiveTab(key)}
                   whileTap={{ scale: 0.98 }}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-150 text-left ${active
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-150 text-left ${
+                    active
                       ? "bg-[#C5A880]/15 text-[#C5A880] border border-[#C5A880]/20 font-medium"
                       : "text-gray-500 hover:text-gray-200 hover:bg-gray-800/40"
-                    }`}
+                  }`}
                 >
                   <Icon size={15} />
                   {label}
@@ -1169,24 +1174,43 @@ export default function UserDashboard() {
           </button>
         </motion.aside>
 
-        {/* ── Mobile top nav ─────────────────────────────────────────────── */}
-        <div className="lg:hidden w-full mb-4">
-          <div
-            className="flex items-center gap-2 overflow-x-auto pb-1"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {NAV_ITEMS.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${activeTab === key
-                    ? "bg-[#C5A880]/15 text-[#C5A880] border border-[#C5A880]/20"
-                    : "text-gray-500 bg-gray-800/40 border border-gray-800"
-                  }`}
-              >
-                <Icon size={12} /> {label}
-              </button>
-            ))}
+        {/* ── Mobile Bottom Navigation ───────────────────────────── */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+          <div className="mx-2 mb-2 rounded-2xl border border-gray-800/60 bg-[#0E1420]/95 backdrop-blur-xl shadow-2xl">
+            <div className="grid grid-cols-5">
+              {NAV_ITEMS.map(({ key, icon: Icon }) => {
+                const active = activeTab === key;
+
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setActiveTab(key)}
+                    className={`flex flex-col items-center justify-center py-3 transition-all ${
+                      active
+                        ? "text-[#C5A880]"
+                        : "text-gray-500 hover:text-gray-300"
+                    }`}
+                  >
+                    <Icon size={18} />
+                    <span className="text-[10px] mt-1">
+                      {key === "history"
+                        ? "History"
+                        : key === "artworks"
+                          ? "Collection"
+                          : key === "reviews"
+                            ? "Reviews"
+                            : key === "tier"
+                              ? "Plan"
+                              : "Settings"}
+                    </span>
+
+                    {active && (
+                      <div className="absolute bottom-1 w-1 h-1 rounded-full bg-[#C5A880]" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

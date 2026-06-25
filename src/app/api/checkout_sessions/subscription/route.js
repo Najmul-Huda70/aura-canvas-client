@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 
-import { stripe } from '../../../lib/stripe'
+import { stripe } from '@/lib/stripe'
 import { PLAN_PRICE_ID } from '@/lib/stripe'
 import { getUser } from '@/lib/core/SSR'
 
@@ -28,7 +28,7 @@ export async function POST(request) {
       ],
       mode: 'subscription',
       metadata:{planId},
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/success/subscription?session_id={CHECKOUT_SESSION_ID}`,
     });
     return NextResponse.redirect(session.url, 303)
   } catch (err) {
