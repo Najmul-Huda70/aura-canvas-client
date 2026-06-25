@@ -31,6 +31,7 @@ import { authClient, useSession } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 import { redirect } from "next/navigation";
 import AddArtwork from "@/components/dashboard/artist/AddArtwork";
+import { apiService } from "@/lib/api";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMGBB_API;
@@ -1018,55 +1019,88 @@ export default function ArtistDashboard() {
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const userId = user?.id;
+  const email=user?.email;
   const [categories, setCategories] = useState([]);
 
-  useEffect(() => {
-    fetch(`${BASE_URL}/category`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && Array.isArray(data.data)) {
-          setCategories(data.data);
-        } else if (Array.isArray(data)) {
-          setCategories(data);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching categories:", error);
-      });
-  }, []);
+  // useEffect(() => {
+  //   fetch(`${BASE_URL}/category`)
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       if (data.success && Array.isArray(data.data)) {
+  //         setCategories(data.data);
+  //       } else if (Array.isArray(data)) {
+  //         setCategories(data);
+  //       }
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error fetching categories:", error);
+  //     });
+  // }, []);
   // console.log("category:", categories);
   useEffect(() => {
-    const loadDashboardData = async () => {
-      if (!userId) return;
-      try {
-        setLoading(true);
-        const [artworksRes, salesRes] = await Promise.all([
-          fetch(`${BASE_URL}/artworks?userId=${userId}`),
-          fetch(`${BASE_URL}/purchase?userId=${userId}`),
-        ]);
-        const artworksData = await artworksRes.json();
-        const salesData = await salesRes.json();
-        if (artworksData?.success && artworksData.data) {
-          setArtworks(artworksData.data);
-        } else {
-          setArtworks([]);
-        }
-        if (salesData?.success && salesData.data) {
-          setSales(salesData.data);
-        } else {
-          setSales([]);
-        }
-      } catch (error) {
-        console.error("Error loading dashboard data:", error);
-        setArtworks([]);
-        setSales([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadDashboardData();
-  }, [userId]);
+  const loadDashboardData = async () => {
+    if (!userId) return;
+    try {
+      setLoading(true);
+      
+      const [artworksData, salesData] = await Promise.all([
+        apiService.getArtworks({ userId: userId }),
+        apiService.getMyOrders(email),
+      ]);
 
+      if (artworksData?.success && artworksData.data) {
+        setArtworks(artworksData.data);
+      } else {
+        setArtworks([]);
+      }
+
+      if (salesData?.success && salesData.data) {
+        setSales(salesData.data);
+      } else {
+        setSales([]);
+      }
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+      toast.error(error.message || "Failed to load dashboard statistics.");
+      setArtworks([]);
+      setSales([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  loadDashboardData();
+}, [userId,toast,email]);
+const artistId = session?.user?.id; 
+const [salesLoading, setSalesLoading] = useState(true);
+const [totalEarnings, setTotalEarnings] = useState(0);
+// অথবা আপনার সিস্টেমে যেভাবে আর্টিস্ট আইডি ডিফাইন করা আছে
+
+useEffect(() => {
+  if (!artistId) return;
+
+  const fetchSalesHistory = async () => {
+    try {
+      setSalesLoading(true);
+      
+      // ব্যাকএন্ডের নতুন রাউটে আর্টিস্ট আইডি পাঠানো হচ্ছে
+      const res = await fetch(`${BASE_URL}/sales-history?artistId=${artistId}`);
+      const result = await res.json();
+
+      if (result.success) {
+        setSales(result.data || []);
+        setTotalEarnings(result.totalEarnings || 0); // টোটাল ইনকামও সেট করে নিলাম
+      }
+    } catch (err) {
+      console.error("Failed to fetch sales history:", err);
+    } finally {
+      setSalesLoading(false);
+    }
+  };
+
+  fetchSalesHistory();
+}, [artistId]);
+
+console.log("Sales Data:", sales);
   const totalSpentOrEarned = artworks.reduce(
     (acc, curr) => acc + (curr.status === "sold" ? curr.price : 0),
     0,

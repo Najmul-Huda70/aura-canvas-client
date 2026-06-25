@@ -162,7 +162,7 @@ function TierBadge({ plan }) {
 // data: GET ${BASE_URL}/purchase?userId=...
 // shape expected: [{ _id, artwork: { title, artist, images:[url] }, price, createdAt, status }]
 // ─────────────────────────────────────────────────────────────────────────────
-function PurchaseHistory({ purchases }) {
+function PurchaseHistory({ purchases = [] }) {
   return (
     <motion.div
       variants={stagger}
@@ -170,6 +170,7 @@ function PurchaseHistory({ purchases }) {
       animate="visible"
       className="space-y-6"
     >
+      {/* Header Section */}
       <motion.div
         variants={fadeUp}
         className="flex items-center justify-between flex-wrap gap-3"
@@ -188,6 +189,7 @@ function PurchaseHistory({ purchases }) {
         </div>
       </motion.div>
 
+      {/* Table Section */}
       <motion.div
         variants={fadeUp}
         className="rounded-2xl border border-gray-800/50 overflow-hidden bg-[#0E1420]/50"
@@ -197,67 +199,78 @@ function PurchaseHistory({ purchases }) {
             No purchases recorded yet.
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-800/60">
-                <th className="text-left text-[10px] uppercase tracking-widest text-gray-600 px-5 py-3.5 font-medium">
-                  Artwork
-                </th>
-                <th className="text-left text-[10px] uppercase tracking-widest text-gray-600 px-4 py-3.5 font-medium hidden sm:table-cell">
-                  Artist
-                </th>
-                <th className="text-left text-[10px] uppercase tracking-widest text-gray-600 px-4 py-3.5 font-medium">
-                  Price
-                </th>
-                <th className="text-left text-[10px] uppercase tracking-widest text-gray-600 px-4 py-3.5 font-medium hidden md:table-cell">
-                  Date
-                </th>
-                <th className="text-left text-[10px] uppercase tracking-widest text-gray-600 px-4 py-3.5 font-medium hidden sm:table-cell">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {purchases.map((p, i) => (
-                <motion.tr
-                  key={p._id}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 + i * 0.06, duration: 0.4 }}
-                  className="border-b border-gray-800/30 last:border-0 hover:bg-gray-800/20 transition-colors group"
-                >
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 shrink-0">
-                        <img
-                          src={p.artwork?.images?.[0] || "/placeholder.jpg"}
-                          alt={p.artwork?.title}
-                          className="w-full h-full object-cover"
-                        />
+          <div className="overflow-x-auto"> {/* রেসপন্সিভ টেবিল স্ক্রোল সাপোর্ট */}
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-800/60">
+                  <th className="text-left text-[10px] uppercase tracking-widest text-gray-600 px-5 py-3.5 font-medium">
+                    Artwork
+                  </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-gray-600 px-4 py-3.5 font-medium hidden sm:table-cell">
+                    Artist
+                  </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-gray-600 px-4 py-3.5 font-medium">
+                    Price
+                  </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-gray-600 px-4 py-3.5 font-medium hidden md:table-cell">
+                    Date
+                  </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-gray-600 px-4 py-3.5 font-medium hidden sm:table-cell">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {purchases.map((p, i) => (
+                  <motion.tr
+                    key={p._id || i} // 🎯 ইউনিক MongoDB আইডি কি (Key) হিসেবে ব্যবহার করা হয়েছে
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 + i * 0.06, duration: 0.4 }}
+                    className="border-b border-gray-800/30 last:border-0 hover:bg-gray-800/20 transition-colors group"
+                  >
+                    {/* Artwork Title & Image */}
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 shrink-0 border border-gray-700/30">
+                          <img
+                            src={p.artworkDetails?.imageUrl || "/placeholder.jpg"} // 🎯 image_2307ed.png অনুযায়ী imageUrl সরাসরি স্ট্রিং
+                            alt={p.artworkDetails?.title || "Artwork"}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-gray-200 group-hover:text-[#C5A880] transition-colors truncate max-w-[140px]">
+                          {p.artworkDetails?.title || "Untitled"} {/* 🎯 artworkDetails.title ফিক্স করা হয়েছে */}
+                        </span>
                       </div>
-                      <span className="text-sm font-medium text-gray-200 group-hover:text-[#C5A880] transition-colors truncate max-w-[140px]">
-                        {p.artwork?.title || "Untitled"}
+                    </td>
+
+                    {/* Artist Name */}
+                    <td className="px-4 py-4 text-sm text-gray-400 hidden sm:table-cell">
+                      {p.artworkDetails?.artistName || "—"} {/* 🎯 artistName ফিক্স করা হয়েছে */}
+                    </td>
+
+                    {/* Price (Amount) */}
+                    <td className="px-4 py-4 text-sm font-semibold text-[#C5A880]">
+                      ${(p.amount ?? 0).toLocaleString()} {/* 🎯 p.price এর বদলে p.amount করা হয়েছে */}
+                    </td>
+
+                    {/* Date */}
+                    <td className="px-4 py-4 text-xs text-gray-500 hidden md:table-cell">
+                      {p.purchasedAt ? new Date(p.purchasedAt).toLocaleDateString() : "—"} {/* 🎯 createdAt এর বদলে purchasedAt করা হয়েছে */}
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-4 py-4 hidden sm:table-cell">
+                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide font-semibold">
+                        <Check size={8} /> {p.status || "completed"}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-400 hidden sm:table-cell">
-                    {p.artwork?.artist || "—"}
-                  </td>
-                  <td className="px-4 py-4 text-sm font-semibold text-[#C5A880]">
-                    ${(p.price ?? 0).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-4 text-xs text-gray-500 hidden md:table-cell">
-                    {p.createdAt ? formatDate(p.createdAt) : "—"}
-                  </td>
-                  <td className="px-4 py-4 hidden sm:table-cell">
-                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide font-semibold">
-                      <Check size={8} /> {p.status || "completed"}
-                    </span>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </motion.div>
     </motion.div>
@@ -268,14 +281,14 @@ function PurchaseHistory({ purchases }) {
 // SECTION 2 — My Collection
 // Derived from purchases — each purchased artwork IS the collection
 // ─────────────────────────────────────────────────────────────────────────────
-function BoughtArtworks({ purchases }) {
-  // Map purchase list → collection cards
+function BoughtArtworks({ purchases = [] }) {
+  // 🎯 ম্যাপ পারচেজ লিস্ট → নতুন ডেটাবেজ কালেকশন স্ট্রাকচার অনুযায়ী ফিক্সড
   const collection = purchases.map((p) => ({
     id: p._id,
-    title: p.artwork?.title || "Untitled",
-    artist: p.artwork?.artist || "Unknown",
-    image: p.artwork?.images?.[0] || "/placeholder.jpg",
-    artworkId: p.artwork?._id || p.artworkId,
+    title: p.artworkDetails?.title || "Untitled", // 🎯 artworkDetails.title করা হয়েছে
+    artist: p.artworkDetails?.artistName || "Unknown", // 🎯 artworkDetails.artistName করা হয়েছে
+    image: p.artworkDetails?.imageUrl || "/placeholder.jpg", // 🎯 সরাসরি imageUrl ব্যবহার করা হয়েছে
+    artworkId: p.artworkId || p.artworkDetails?._id, // 🎯 মেইন অবজেক্ট বা নেস্টেড অবজেক্টের আইডি
   }));
 
   return (
@@ -285,6 +298,7 @@ function BoughtArtworks({ purchases }) {
       animate="visible"
       className="space-y-6"
     >
+      {/* Header */}
       <motion.div
         variants={fadeUp}
         className="flex items-center justify-between"
@@ -297,6 +311,7 @@ function BoughtArtworks({ purchases }) {
         </div>
       </motion.div>
 
+      {/* Empty State */}
       {collection.length === 0 ? (
         <motion.div
           variants={fadeUp}
@@ -309,6 +324,7 @@ function BoughtArtworks({ purchases }) {
           </button>
         </motion.div>
       ) : (
+        /* Gallery Grid */
         <motion.div
           variants={stagger}
           className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
@@ -321,7 +337,7 @@ function BoughtArtworks({ purchases }) {
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
               className="group relative rounded-2xl overflow-hidden border border-gray-800/50 bg-[#0E1420]/50 cursor-pointer"
             >
-              <div className="aspect-[4/3] overflow-hidden">
+              <div className="aspect-[4/3] overflow-hidden relative">
                 <motion.img
                   src={art.image}
                   alt={art.title}
@@ -329,12 +345,15 @@ function BoughtArtworks({ purchases }) {
                   whileHover={{ scale: 1.07 }}
                   transition={{ duration: 0.4 }}
                 />
+                {/* Hover overlay button */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-end p-4">
                   <div className="bg-[#C5A880] text-[#0B0F19] rounded-full p-2 shadow-lg">
                     <ExternalLink size={13} />
                   </div>
                 </div>
               </div>
+              
+              {/* Card Footer Info */}
               <div className="p-4">
                 <p className="text-sm font-semibold text-gray-200 truncate">
                   {art.title}
@@ -348,7 +367,6 @@ function BoughtArtworks({ purchases }) {
     </motion.div>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 3 — My Reviews
 // data: GET ${BASE_URL}/reviews?userId=...
@@ -1015,33 +1033,43 @@ export default function UserDashboard() {
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const userId = user?.id;
+  const email=user?.email;
   const userPlan = user?.plan;
-
+console.log('user:',user);
   // ── Fetch purchases + reviews in parallel once userId is ready ─────────────
-  useEffect(() => {
-    const f = async () => {
-      if (!userId) return;
-      setDataLoading(true);
+ // ── Fetch purchases + reviews in parallel once user is ready ─────────────
+useEffect(() => {
+  // 🎯 ফিক্স ১: ইউজার বা ইমেইল কোনোটিই যদি রেডি না থাকে, তবে ফেচ করা থামিয়ে দেবে
+  if (!session?.user || !email) return;
+  
+  const f = async () => {
+    setDataLoading(true);
 
-      Promise.all([
-        fetch(`${BASE_URL}/purchase?userId=${userId}`).then((r) => r.json()),
-        fetch(`${BASE_URL}/reviews?userId=${userId}`).then((r) => r.json()),
-        fetch(`${BASE_URL}/plans?planId=${userPlan}`).then((r) => r.json()),
-      ])
-        .then(([purchaseRes, reviewRes, plan]) => {
-          setPurchases(purchaseRes.data || []);
-          setReviews(reviewRes.data || []);
-          setPlans(plan.data || []);
-        })
-        .catch((err) => {
-          console.error("Dashboard fetch error:", err);
-          toast.error("Failed to load dashboard data");
-        })
-        .finally(() => setDataLoading(false));
-    };
-    f();
-  }, [userId, userPlan]);
-  console.log("plans now: ", plans);
+    Promise.all([
+      fetch(`${BASE_URL}/my-orders?email=${email}`).then((r) => r.json()),
+      // যদি রিভিউ এর জন্য userId মাস্ট হয়, তবে ব্যাকএন্ড ক্র্যাশ এড়াতে সেফটি চেক রাখা ভালো
+      userId ? fetch(`${BASE_URL}/reviews?userId=${userId}`).then((r) => r.json()) : Promise.resolve({ data: [] }),
+      userPlan ? fetch(`${BASE_URL}/plans?planId=${userPlan}`).then((r) => r.json()) : Promise.resolve({ data: [] }),
+    ])
+      .then(([purchaseRes, reviewRes, plan]) => {
+        // 🎯 ফিক্স ২: ব্যাকএন্ডের রেসপন্স ফরম্যাট চেক করুন (আপনার ব্যাকএন্ডে Response ছিল { success: true, data: [...] })
+        console.log("Raw Purchase Response from Backend:", purchaseRes);
+        
+        setPurchases(purchaseRes.data || purchaseRes || []);
+        setReviews(reviewRes.data || reviewRes || []);
+        setPlans(plan.data || plan || []);
+      })
+      .catch((err) => {
+        console.error("Dashboard fetch error:", err);
+        toast.error("Failed to load dashboard data");
+      })
+      .finally(() => setDataLoading(false));
+  };
+  
+  f();
+}, [session, userId, userPlan, email]); // 🎯 ফিক্স ৩: পুরো session অবজেক্টকে ডিপেন্ডেন্সিতে রাখা সেফ
+  console.log('purchases:',purchases);
+  // console.log("plans now: ", plans);
   useEffect(() => {
     if (isPending) return;
     if (!user) {

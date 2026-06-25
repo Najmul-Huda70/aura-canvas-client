@@ -16,6 +16,7 @@ import {
   Filter,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { apiService } from "@/lib/api";
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest first" },
@@ -173,26 +174,22 @@ export default function BrowseArtworks() {
     async function fetchArtworks() {
       setLoading(true);
       try {
-        const res = await fetch(`${BASE_URL}/aprovedArtworks`);
-        if (!res.ok) throw new Error("Server error handling request");
-        const resData = await res.json();
-
-        // ব্যাকএন্ডের নতুন ফরম্যাট (resData.success && resData.data) অনুযায়ী ডেটা সেট করা হচ্ছে
-        if (resData && resData.success && Array.isArray(resData.data)) {
-          setArtworks(resData.data);
-        } else {
-          setArtworks([]);
-        }
-      } catch (error) {
-        console.error("Error fetching data from server:", error);
-        setArtworks([]); 
-      } finally {
-        setTimeout(() => setLoading(false), 500);
+        const resData = await apiService.getApprovedArtworks();
+       if (resData && resData.success && Array.isArray(resData.data)) {
+        setArtworks(resData.data);
+      } else {
+        setArtworks([]);
       }
+    } catch (error) {
+      console.error("Error fetching data from server:", error);
+      toast.error(error.message || "Failed to load approved artworks.");
+      setArtworks([]); 
+    } finally {
+      setTimeout(() => setLoading(false), 500);
     }
-    fetchArtworks();
-  }, []);
- 
+  }
+  fetchArtworks();
+}, []);
 
   const categories = [...new Set(artworks.map((a) => a.category))].sort();
   

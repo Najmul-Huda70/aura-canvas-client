@@ -22,10 +22,11 @@ import {
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { redirect, useRouter } from "next/navigation";
-const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+import { apiService } from "@/lib/api";
+import { toast } from "react-hot-toast";
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
-const TRANSACTIONS = [
+const orders = [
   {
     id: "TXN98321",
     type: "purchase",
@@ -70,7 +71,7 @@ const NAV_ITEMS = [
   { key: "analytics", label: "Analytics Overview", icon: BarChart3 },
   { key: "users", label: "Manage Users", icon: Users },
   { key: "artworks", label: "Manage Artworks", icon: Palette },
-  { key: "transactions", label: "Transactions", icon: Receipt },
+  { key: "orders", label: "orders", icon: Receipt },
 ];
 
 const pageVariants = {
@@ -79,52 +80,38 @@ const pageVariants = {
   exit: { opacity: 0, y: -10, transition: { duration: 0.2 } },
 };
 
-// ─── Toast Component ──────────────────────────────────────────────────────────
-function Toast({ message, onClose }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border border-emerald-500/30 bg-emerald-950/90 text-emerald-300 shadow-xl text-sm backdrop-blur-md"
-    >
-      <CheckCircle size={15} />
-      {message}
-      <button onClick={onClose} className="ml-2 opacity-60 hover:opacity-100">
-        <X size={13} />
-      </button>
-    </motion.div>
-  );
-}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("analytics");
   const [users, setUsers] = useState([]);
+  const [orders,setOrders]=useState([]);
   const [artworks, setArtworks] = useState([]);
-  const [toast, setToast] = useState(null);
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const router = useRouter();
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
+
+  // Load Initial Data using apiService
   useEffect(() => {
     const reload = async () => {
       try {
-        const [allUser, allArtworks] = await Promise.all([
-          (await fetch(`${BASE_URL}/user`)).json(),
-          (await fetch(`${BASE_URL}/artworks`)).json(),
+        const [allUser, allArtworks,allOrders] = await Promise.all([
+          apiService.getUser(), // Calling your centralized users/reviews route handler
+          apiService.getArtworks(), // Calling your centralized artworks route handler
+          apiService.getAllOrders(),
         ]);
 
         if (allUser.success) setUsers(allUser.data);
         if (allArtworks.success) setArtworks(allArtworks.data);
+        if(allOrders.success) setOrders(allOrders.data);
       } catch (error) {
         console.error("Fetch failed:", error);
+        toast.error("Failed to fetch administrative collections.");
       }
     };
     reload();
   }, []);
-  // console.log("artworks:", artworks);
+console.log('orders:',orders);
+  // Data Computations (Variables completely unchanged)
   const totaArtworks = artworks.length;
   const CATEGORY_DATA =
     artworks.length > 0
@@ -133,16 +120,9 @@ export default function AdminDashboard() {
             const CatName = curr.category || "Uncategory";
             if (!acc[CatName]) {
               const colors = [
-                "bg-[#C5A880]", // Warm Sand
-                "bg-blue-500", // Blue
-                "bg-emerald-500", // Emerald
-                "bg-purple-500", // Purple
-                "bg-amber-500", // Amber/Yellow
-                "bg-rose-500", // Rose/Red
-                "bg-indigo-500", // Indigo
-                "bg-cyan-500", // Cyan
-                "bg-orange-500", // Orange
-                "bg-fuchsia-500", // Fuchsia
+                "bg-[#C5A880]", "bg-blue-500", "bg-emerald-500", "bg-purple-500",
+                "bg-amber-500", "bg-rose-500", "bg-indigo-500", "bg-cyan-500",
+                "bg-orange-500", "bg-fuchsia-500",
               ];
               const currSum = CatName.split("").reduce(
                 (sum, c) => sum + c.charCodeAt(0),
@@ -160,24 +140,13 @@ export default function AdminDashboard() {
           }, {}),
         )
       : [];
-  console.log("length:", totaArtworks, "CATEGORY_DATA: ", CATEGORY_DATA);
-  // Analytics Calculations
+
   const totalUsers = users.filter((u) => u.role === "user").length;
   const totalArtists = users.filter((u) => u.role === "artist").length;
-  const totalArtworksSold = TRANSACTIONS.filter(
-    (t) => t?.type === "purchase",
-  ).length;
-  const totalRevenue = TRANSACTIONS.reduce((sum, t) => sum + t.amount, 0);
-
-  // Actions
-  const handleRoleChange = (userId, newRole) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)),
-    );
-    showToast(`User role updated to ${newRole}`);
-  };
-
- 
+  const totalArtworksSold = orders.length;
+  const totalRevenue = orders.reduce((sum, t) => sum + t.amount, 0);
+console.log('tatal:',totalRevenue);
+  // Security Guards
   useEffect(() => {
     if (isPending) return;
     if (!user) {
@@ -186,57 +155,55 @@ export default function AdminDashboard() {
       redirect("/forbidden");
     }
   }, [user, isPending]);
+
+  // Actions
+  const handleRoleChange = (userId, newRole) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)),
+    );
+    toast.success(`User role updated to ${newRole}`);
+  };
+
   const handleApproveArtwork = async (artId) => {
-  try {
-    const res = await fetch(`${BASE_URL}/artworks?artId=${artId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status: "available" }),
-    });
+    try {
+      // Using centralized apiService wrapper for handling runtime configuration internally
+      const resData = await apiService.updateArtworkStatus(artId, "available");
 
-    const resData = await res.json();
-
-    if (res.ok && resData.success) {
-      setArtworks((prevArtworks) =>
-        prevArtworks.map((art) =>
-          art._id === artId ? { ...art, status: "available" } : art,
-        ),
-      );
-      showToast("Artwork approved and published successfully!");
-    } else {
-      showToast(resData.message || "Failed to approve artwork", "error");
+      if (resData.success) {
+        setArtworks((prevArtworks) =>
+          prevArtworks.map((art) =>
+            art._id === artId ? { ...art, status: "available" } : art,
+          ),
+        );
+        toast.success("Artwork approved and published successfully!");
+      } else {
+        toast.error(resData.message || "Failed to approve artwork");
+      }
+      router.push('/dashboard/admin');
+    } catch (error) {
+      console.error("Approval error:", error);
+      toast.error(error.message || "Server error. Could not approve artwork.");
     }
-    router.push('/dashboard/admin');
-  } catch (error) {
-    console.error("Approval error:", error);
-    showToast("Server error. Could not approve artwork.", "error");
-  }
-};
+  };
 
-const handleDeleteArtwork = async (artId, title) => {
-  try {
-    const res = await fetch(`${BASE_URL}/artworks/${artId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const resData = await res.json();
+  const handleDeleteArtwork = async (artId, title) => {
+    try {
+      // Using centralized apiService wrapper for processing resource deletion securely
+      const resData = await apiService.deleteArtwork(artId);
 
-    if (res.ok && resData.success) {
-      setArtworks((prev) => prev.filter((a) => a._id !== artId));
-      showToast(`"${title}" has been deleted`);
-    } else {
-      showToast(resData.message || "Failed to delete artwork", "error");
+      if (resData.success) {
+        setArtworks((prev) => prev.filter((a) => a._id !== artId));
+        toast.success(`"${title}" has been deleted`);
+      } else {
+        toast.error(resData.message || "Failed to delete artwork");
+      }
+      router.push('/dashboard/admin');
+    } catch (error) {
+      console.error("delete error:", error);
+      toast.error(error.message || "Server error. Could not delete artwork.");
     }
-    router.push('/dashboard/admin');
-  } catch (error) {
-    console.error("delete error:", error);
-    showToast("Server error. Could not delete artwork.", "error");
-  }
-};
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-[#070B13] flex items-center justify-center text-gray-400 text-xs">
@@ -621,12 +588,12 @@ const handleDeleteArtwork = async (artId, title) => {
               </div>
             )}
 
-            {/* ─── TAB 4: VIEW ALL TRANSACTIONS ─── */}
-            {activeTab === "transactions" && (
+            {/* ─── TAB 4: VIEW ALL orders ─── */}
+            {activeTab === "orders" && (
               <>
                 <div>
                   <h2 className="text-xl font-medium text-gray-100">
-                    All Transactions
+                    All orders
                   </h2>
                   <p className="text-xs text-gray-500">
                     Audit logs for subscriptions and masterclass marketplace
@@ -645,13 +612,13 @@ const handleDeleteArtwork = async (artId, title) => {
                       </tr>
                     </thead>
                     <tbody className="text-xs divide-y divide-gray-800/30">
-                      {TRANSACTIONS.map((txn) => (
+                      {orders.map((txn,index) => (
                         <tr
-                          key={txn.id}
+                          key={index}
                           className="hover:bg-gray-800/10 transition-colors"
                         >
                           <td className="p-4 font-mono text-gray-400 tracking-wide">
-                            {txn.id}
+                            {txn.transactionId}
                           </td>
                           <td className="p-4">
                             <span
@@ -665,7 +632,7 @@ const handleDeleteArtwork = async (artId, title) => {
                             </span>
                           </td>
                           <td className="p-4 text-gray-300">{txn.email}</td>
-                          <td className="p-4 text-gray-500">{txn.date}</td>
+                          <td className="p-4 text-gray-500">{txn.date.split('T')[0]}</td>
                           <td className="p-4 text-right text-[#C5A880] font-semibold">
                             ${txn.amount}
                           </td>
@@ -699,17 +666,14 @@ const handleDeleteArtwork = async (artId, title) => {
                       ? "Users"
                       : key === "artworks"
                         ? "Artworks"
-                        : "Transactions"}
+                        : "orders"}
                 </span>
               </button>
             ))}
           </div>
         </div>
       </div>
-      {/* Admin Notification Toast */}
-      <AnimatePresence>
-        {toast && <Toast message={toast} onClose={() => setToast(null)} />}
-      </AnimatePresence>
+     
     </div>
   );
 }

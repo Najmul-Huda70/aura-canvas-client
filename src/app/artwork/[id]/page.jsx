@@ -20,6 +20,7 @@ import {
 import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
 import GatewayTimeoutPage from "@/components/gatewayTimeOutPage";
+import { apiService } from "@/lib/api";
 
 function StatusBadge({ status }) {
   const isAvailable = status === "available";
@@ -91,34 +92,17 @@ useEffect(() => {
     setIsTimeout(false); 
     
     try {
-      const res = await fetch(`${BASE_URL}/aprovedArtworks?id=${id}`, {
-        method: "GET",
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const resData = await apiService.getArtworks({ id:id,signal: controller.signal });
       
       clearTimeout(timeoutId);
       
-      if (!res.ok) {
-        if (res.status === 504) {
-          setIsTimeout(true);
-        } else {
-          setNotFound(true);
-        }
-        return;
-      }
-      
-      const resData = await res.json();
-
       if (
         resData &&
         resData.success &&
         Array.isArray(resData.data) &&
         resData.data.length > 0
       ) {
-        setArtwork(resData.data[0]);
+        setArtwork(resData.data[0]); 
       } else {
         setNotFound(true);
       }
@@ -129,7 +113,12 @@ useEffect(() => {
         }
       } else {
         console.error("Failed to fetch artwork:", error);
-        setNotFound(true); 
+        
+        if (error.message?.includes("504")) {
+          setIsTimeout(true);
+        } else {
+          setNotFound(true); 
+        }
       }
     } finally {
       if (!isAbortedByCleanup) {
