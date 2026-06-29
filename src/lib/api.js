@@ -1,13 +1,7 @@
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001";
 
-/**
- * Generic API request helper
- * @param {string} endpoint - API route (e.g., '/artworks')
- * @param {object} [options] - Fetch configurations (method, body, headers)
- * @param {object} [params] - Optional query parameters object
- */
 export async function apiRequest(endpoint, options = {}, params = null) {
-  // 1. Build URL with query parameters if provided
+
   let url = `${BASE_URL}${endpoint}`;
   if (params) {
     const searchParams = new URLSearchParams();
@@ -43,32 +37,38 @@ export async function apiRequest(endpoint, options = {}, params = null) {
       throw new Error(result.message || `HTTP error! Status: ${response.status}`);
     }
 
-    return result; // Returns { success: true, data: [...] } from your backend
+    return result; 
   } catch (error) {
     console.error(`API Fetch Error [${endpoint}]:`, error.message);
     throw error;
   }
 }
 
-// Reusable Endpoint Service Matrix
+// Reusable Endpoint Service
 export const apiService = {
-  // Artworks
-  getArtworks: (params) => apiRequest("/artworks", { method: "GET" }, params),
+   // Artworks
+  getMyArtworks: (params, token) => 
+    apiRequest("/artworks", { 
+      method: "GET",
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    }, params),
+  getArtworks: (params) => apiRequest("/artworks", { method: "GET"}, params),
   getApprovedArtworks: (params) => apiRequest("/artworks", { method: "GET" }, { ...params, approvedOnly: "true" }),
   createArtwork: (artworkData) => apiRequest("/artworks", { method: "POST", body: artworkData }),
   updateArtwork: (id, artworkData) => apiRequest(`/artworks/${id}`, { method: "PUT", body: artworkData }),
   updateArtworkStatus: (artId, status) => apiRequest("/artworks", { method: "PATCH", body: { status } }, { artId }),
   deleteArtwork: (id) => apiRequest(`/artworks/${id}`, { method: "DELETE" }),
-  getUser:(params)=>apiRequest("/user", { method: "GET" }, params),
+  getUser:(token)=>apiRequest("/user", { method: "GET" ,headers: token ? { Authorization: `Bearer ${token}` } : {}}),
   // Orders & Sales History
-  getMyOrders: (email) => apiRequest("/my-orders", { method: "GET" }, { email }),
-  getAllOrders: () => apiRequest("/admin/transactions", { method: "GET" }),
-  getSalesHistory: (artistId) => apiRequest("/sales-history", { method: "GET" }, { artistId }),
+  getMyOrders: (email,token) => apiRequest("/my-orders", { method: "GET" , headers: token ? { Authorization: `Bearer ${token}` } : {}}, { email }),
+  getAllOrders: (token) => apiRequest("/admin/transactions", { method: "GET" ,headers: token ? { Authorization: `Bearer ${token}` } : {}},),
+  getSalesHistory: (artistId,token) => apiRequest("/sales-history", { method: "GET", headers: token ? { Authorization: `Bearer ${token}` } : {}}, { artistId }),
   
   // Subscriptions & Plans
   getPlans: (planId) => apiRequest("/plans", { method: "GET" }, { planId }),
   createSubscription: (subData) => apiRequest("/subscriptions", { method: "POST", body: subData }),
-  
+  //category
+  getCategory:()=>apiRequest("/category", { method: "GET" }),
   // Reviews & Feedback
   getReviews: (params) => apiRequest("/reviews", { method: "GET" }, params),
 };

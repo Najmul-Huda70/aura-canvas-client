@@ -27,6 +27,7 @@ import {
 import { authClient, useSession } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 import { redirect } from "next/navigation";
+import { apiService } from "@/lib/api";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 const iconMap = {
@@ -1029,45 +1030,55 @@ export default function UserDashboard() {
   const [reviews, setReviews] = useState([]);
   const [plans, setPlans] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
-
+  const [token,setToken]=useState(null);
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const userId = user?.id;
   const email=user?.email;
   const userPlan = user?.plan;
 console.log('user:',user);
-  // ── Fetch purchases + reviews in parallel once userId is ready ─────────────
- // ── Fetch purchases + reviews in parallel once user is ready ─────────────
+  // ── Fetch purchases + reviews in parallel once user is ready ─────────────
 useEffect(() => {
-  // 🎯 ফিক্স ১: ইউজার বা ইমেইল কোনোটিই যদি রেডি না থাকে, তবে ফেচ করা থামিয়ে দেবে
   if (!session?.user || !email) return;
   
-  const f = async () => {
-    setDataLoading(true);
+  const loadDashboardData = async () => {
+      let currentToken = token;
+    if (!currentToken) {
+      try {
+        const res = await authClient.getJWT();
+        if (res?.data?.token) {
+          currentToken = res.data.token;
+          setToken(currentToken); 
+        }
+      } catch (err) {
+        console.error("JWT fetch failed:", err);
+      }
+    }
+    try {
+      setDataLoading(true);
+      
+      const [purchaseRes, reviewRes, planRes] = await Promise.all([
+        apiService.getMyOrders(email,currentToken),
+        apiService.getReviews(userId),
+        apiService.getPlans(userPlan)
+      ]);
 
-    Promise.all([
-      fetch(`${BASE_URL}/my-orders?email=${email}`).then((r) => r.json()),
-      // যদি রিভিউ এর জন্য userId মাস্ট হয়, তবে ব্যাকএন্ড ক্র্যাশ এড়াতে সেফটি চেক রাখা ভালো
-      userId ? fetch(`${BASE_URL}/reviews?userId=${userId}`).then((r) => r.json()) : Promise.resolve({ data: [] }),
-      userPlan ? fetch(`${BASE_URL}/plans?planId=${userPlan}`).then((r) => r.json()) : Promise.resolve({ data: [] }),
-    ])
-      .then(([purchaseRes, reviewRes, plan]) => {
-        // 🎯 ফিক্স ২: ব্যাকএন্ডের রেসপন্স ফরম্যাট চেক করুন (আপনার ব্যাকএন্ডে Response ছিল { success: true, data: [...] })
-        console.log("Raw Purchase Response from Backend:", purchaseRes);
-        
-        setPurchases(purchaseRes.data || purchaseRes || []);
-        setReviews(reviewRes.data || reviewRes || []);
-        setPlans(plan.data || plan || []);
-      })
-      .catch((err) => {
-        console.error("Dashboard fetch error:", err);
-        toast.error("Failed to load dashboard data");
-      })
-      .finally(() => setDataLoading(false));
+      console.log("Raw Purchase Response from apiService:", purchaseRes);
+
+      setPurchases(purchaseRes?.data || purchaseRes || []);
+      setReviews(reviewRes?.data || reviewRes || []);
+      setPlans(planRes?.data || planRes || []);
+
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setDataLoading(false);
+    }
   };
   
-  f();
-}, [session, userId, userPlan, email]); // 🎯 ফিক্স ৩: পুরো session অবজেক্টকে ডিপেন্ডেন্সিতে রাখা সেফ
+  loadDashboardData();
+}, [session, userId, userPlan, email,token]); 
   console.log('purchases:',purchases);
   // console.log("plans now: ", plans);
   useEffect(() => {

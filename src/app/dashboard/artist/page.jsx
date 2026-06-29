@@ -236,143 +236,91 @@ export function ImageUploadZone({ onUpload, previewUrl, setPreviewUrl }) {
   );
 }
 
-function ArtworkForm({onSubmit, onCancel, submitLabel, categories }) {
-  const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState( "");
-  const [price, setPrice] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-console.log('formdata category:',categories);
+function ArtworkForm({ initial = null, onSubmit, onCancel, submitLabel, categories }) {
+  const [title,    setTitle]    = useState(initial?.title       ?? "");
+  const [desc,     setDesc]     = useState(initial?.description ?? "");
+  const [price,    setPrice]    = useState(initial?.price       ?? "");
+  const [category, setCategory] = useState(initial?.category    ?? "");
+  const [imageUrl, setImageUrl] = useState(initial?.imageUrl    ?? "");
+ 
   const inputClass =
     "w-full bg-[#070B13] border border-gray-800/80 focus:border-[#C5A880]/40 rounded-xl px-4 py-3 sm:py-2.5 text-sm text-gray-200 focus:outline-none transition-all appearance-none";
-
+ 
   function handleSubmit(e) {
     e.preventDefault();
     if (!title.trim() || !price || !category || !imageUrl) return;
-    onSubmit({
-      title,
-      description: desc,
-      price: Number(price),
-      category,
-      imageUrl,
-    });
+    onSubmit({ title, description: desc, price: Number(price), category, imageUrl });
   }
-
+ 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-4 text-left w-full max-w-full"
-    >
+    <form onSubmit={handleSubmit} className="space-y-4 text-left w-full max-w-full">
       {/* Title */}
       <div>
         <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5 font-medium">
           Artwork Title
         </label>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className={inputClass}
-          placeholder="Enter masterpiece title"
-        />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} placeholder="Enter masterpiece title" required />
       </div>
-
+ 
       {/* Description */}
       <div>
         <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5 font-medium">
           Description
         </label>
-        <textarea
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          rows={3}
-          className={`${inputClass} resize-none leading-relaxed`}
-          placeholder="Describe the story and emotions behind this artwork..."
-        />
+        <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} className={`${inputClass} resize-none leading-relaxed`} placeholder="Describe the story and emotions behind this artwork..." />
       </div>
-
-      {/* Price & Category Grid */}
+ 
+      {/* Price + Category */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5 font-medium">
             Price ($ USD)
           </label>
-          <input
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className={inputClass}
-            placeholder="0.00"
-          />
+          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} placeholder="0.00" required />
         </div>
         <div>
           <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5 font-medium">
             Category
           </label>
           <div className="relative">
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className={`${inputClass} cursor-pointer pr-10`}
-            >
-              <option value="" className="bg-[#070B13]">
-                Select Category
-              </option>
-              {categories.map((c, index) => (
-                <option key={index} value={c.slug} className="bg-[#070B13]">
-                  {c.name}
-                </option>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className={`${inputClass} cursor-pointer pr-10`} required>
+              <option value="" className="bg-[#070B13]">Select Category</option>
+              {categories.map((c, i) => (
+                <option key={i} value={c.slug} className="bg-[#070B13]">{c.name}</option>
               ))}
             </select>
-            {/* Custom chevron dropdown icon for premium look */}
             <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-500">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 9l-7 7-7-7"
-                />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
               </svg>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Image Upload Zone */}
+ 
+      {/* Image upload */}
       <div className="w-full overflow-hidden">
         <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5 font-medium">
           Upload Image
         </label>
-        <ImageUploadZone
-          onUpload={setImageUrl}
-          previewUrl={imageUrl}
-          setPreviewUrl={setImageUrl}
-        />
+        <ImageUploadZone onUpload={setImageUrl} previewUrl={imageUrl} setPreviewUrl={setImageUrl} />
       </div>
-
-      {/* Responsive Form Action Buttons */}
+ 
+      {/* Actions */}
       <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-start gap-2.5 pt-3 w-full">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="w-full sm:w-auto text-center px-6 py-3 sm:py-2.5 rounded-xl border border-gray-800 text-gray-400 text-xs font-semibold hover:bg-gray-800/30 active:bg-gray-800/50 transition-colors order-2 sm:order-1"
-        >
+        <button type="button" onClick={onCancel}
+          className="w-full sm:w-auto text-center px-6 py-3 sm:py-2.5 rounded-xl border border-gray-800 text-gray-400 text-xs font-semibold hover:bg-gray-800/30 active:bg-gray-800/50 transition-colors order-2 sm:order-1">
           Cancel
         </button>
-        <button
-          type="submit"
-          className="w-full sm:w-auto text-center px-6 py-3 sm:py-2.5 rounded-xl bg-[#C5A880] text-[#070B13] text-xs font-bold hover:bg-[#bfa075] active:scale-[0.98] transition-all order-1 sm:order-2 shadow-md shadow-[#C5A880]/5"
-        >
+        <button type="submit"
+          className="w-full sm:w-auto text-center px-6 py-3 sm:py-2.5 rounded-xl bg-[#C5A880] text-[#070B13] text-xs font-bold hover:bg-[#bfa075] active:scale-[0.98] transition-all order-1 sm:order-2 shadow-md shadow-[#C5A880]/5">
           {submitLabel}
         </button>
       </div>
     </form>
   );
 }
+ 
 
 function DeleteModal({ title, onConfirm, onCancel }) {
   return (
@@ -401,7 +349,7 @@ function DeleteModal({ title, onConfirm, onCancel }) {
   );
 }
 
-function MyArtworks({ artworks, setArtworks, setActiveTab, showToast }) {
+function MyArtworks({ artworks, setArtworks, setActiveTab, showToast ,categories}) {
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -660,7 +608,7 @@ function SalesHistory({ sales }) {
       variants={stagger}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="w-full space-y-6"
     >
       <div>
         <h2 className="text-xl font-medium text-gray-100">Sales History</h2>
@@ -668,64 +616,72 @@ function SalesHistory({ sales }) {
           Track and monitor earnings from your artwork sales
         </p>
       </div>
-      <div className="border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden">
+
+      <div className="w-full border border-gray-800/60 rounded-xl bg-[#090E17]/40 overflow-hidden backdrop-blur-sm">
         {sales.length > 0 ? (
           <>
-            {/* ── MOBILE: card list ── */}
-            <div className="md:hidden divide-y divide-gray-800/30">
-              {sales.map((s) => (
-                <div key={s.id} className="p-4 space-y-1">
-                  <p className="font-medium text-gray-200 text-sm">
-                    {s.artworkTitle}
-                  </p>
-                  <p className="text-xs text-gray-400">{s.buyer}</p>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-xs text-gray-500">
-                      {formatDate(s.date)}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-[#C5A880] font-semibold">
-                        ${s.amount}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/30 border border-emerald-500/20 text-emerald-400 uppercase">
-                        Completed
-                      </span>
+            {/* ── MOBILE VIEW ── */}
+            <div className="md:hidden divide-y divide-gray-800/30 w-full">
+              {sales.map((s, index) => (
+                <div key={index} className="p-4 space-y-3 hover:bg-gray-800/5 transition-colors w-full">
+                  <div className="flex items-start justify-between gap-4 w-full">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <p className="font-medium text-gray-200 text-sm leading-snug truncate">
+                        {s.artworkDetails?.title || "Untitled"}
+                      </p>
+                      <p className="text-xs text-gray-400 flex items-center gap-1.5 truncate">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-600 shrink-0" />
+                        {s.buyerDetails?.name || "Unknown Buyer"}
+                      </p>
                     </div>
+                    <span className="text-sm text-[#C5A880] font-semibold whitespace-nowrap">
+                      ${s.amount}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-800/10 w-full">
+                    <span className="text-xs text-gray-500">
+                      {formatDate(s.purchasedAt)}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 tracking-wide uppercase">
+                      Completed
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* ── DESKTOP: table ── */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full border-collapse text-left">
+            {/* ── DESKTOP VIEW ── */}
+            <div className="hidden md:block w-full">
+              <table className="w-full min-w-full border-collapse text-left table-auto">
                 <thead>
-                  <tr className="border-b border-gray-800/60 bg-[#070B13]/40 text-[11px] text-gray-500 uppercase tracking-wider">
-                    <th className="p-4 font-normal">Artwork</th>
-                    <th className="p-4 font-normal">Buyer</th>
+                  <tr className="border-b border-gray-800/60 bg-[#070B13]/60 text-[11px] text-gray-400 uppercase tracking-wider">
+                    <th className="p-4 font-medium pl-6">Artwork</th>
+                    <th className="p-4 font-medium">Buyer</th>
                     <th className="p-4 font-normal">Date</th>
-                    <th className="p-4 font-normal">Amount</th>
-                    <th className="p-4 font-normal">Status</th>
+                    <th className="p-4 font-normal text-right pr-6">Amount</th>
+                    <th className="p-4 font-normal text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="text-xs divide-y divide-gray-800/30">
-                  {sales.map((s) => (
+                  {sales.map((s, index) => (
                     <tr
-                      key={s.id}
-                      className="hover:bg-gray-800/10 transition-colors"
+                      key={index}
+                      className="hover:bg-gray-800/20 transition-colors group"
                     >
-                      <td className="p-4 font-medium text-gray-200">
-                        {s.artworkTitle}
+                      <td className="p-4 font-medium text-gray-200 pl-6 max-w-[200px] truncate group-hover:text-white">
+                        {s.artworkDetails?.title || "Untitled"}
                       </td>
-                      <td className="p-4 text-gray-400">{s.buyer}</td>
-                      <td className="p-4 text-gray-500">
-                        {formatDate(s.date)}
+                      <td className="p-4 text-gray-400 truncate">
+                        {s.buyerDetails?.name || "Unknown Buyer"}
                       </td>
-                      <td className="p-4 text-[#C5A880] font-semibold">
+                      <td className="p-4 text-gray-500 whitespace-nowrap">
+                        {formatDate(s.purchasedAt)}
+                      </td>
+                      <td className="p-4 text-[#C5A880] font-semibold text-right pr-6 tabular-nums">
                         ${s.amount}
                       </td>
-                      <td className="p-4">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/30 border border-emerald-500/20 text-emerald-400 uppercase">
+                      <td className="p-4 text-center whitespace-nowrap">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 tracking-wide uppercase">
                           Completed
                         </span>
                       </td>
@@ -736,15 +692,15 @@ function SalesHistory({ sales }) {
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center p-10 text-center max-w-md mx-auto my-10">
-            <div className="w-16 h-16 bg-[#E6C594]/10 rounded-full flex items-center justify-center text-[#E6C594] mb-5 animate-pulse">
+          <div className="flex flex-col items-center justify-center p-12 text-center max-w-sm mx-auto my-8">
+            <div className="w-12 h-12 bg-[#E6C594]/10 rounded-full flex items-center justify-center text-[#E6C594] mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="w-7 h-7"
+                className="w-5 h-5"
               >
                 <path
                   strokeLinecap="round"
@@ -753,10 +709,10 @@ function SalesHistory({ sales }) {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-medium text-white mb-2 tracking-wide">
+            <h3 className="text-lg font-medium text-white mb-1.5 tracking-wide">
               No Sales History
             </h3>
-            <p className="text-gray-400 text-sm max-w-xs mb-6 leading-relaxed">
+            <p className="text-gray-500 text-xs leading-relaxed">
               You haven't sold any artworks yet. Once someone purchases your
               art, the transaction details will appear here.
             </p>
@@ -1017,35 +973,36 @@ export default function ArtistDashboard() {
   const { toast, showToast, clearToast } = useToast();
   const [sales, setSales] = useState([]);
   const { data: session, isPending } = useSession();
+  const [token, setToken] = useState(null);
   const user = session?.user;
   const userId = user?.id;
-  const email=user?.email;
+  const artistId = session?.user?.id; 
   const [categories, setCategories] = useState([]);
 
-  // useEffect(() => {
-  //   fetch(`${BASE_URL}/category`)
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       if (data.success && Array.isArray(data.data)) {
-  //         setCategories(data.data);
-  //       } else if (Array.isArray(data)) {
-  //         setCategories(data);
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       console.error("Error fetching categories:", error);
-  //     });
-  // }, []);
-  // console.log("category:", categories);
-  useEffect(() => {
+ useEffect(() => {
   const loadDashboardData = async () => {
-    if (!userId) return;
+    let currentToken = token;
+    if (!currentToken) {
+      try {
+        const res = await authClient.getJWT();
+        if (res?.data?.token) {
+          currentToken = res.data.token;
+          setToken(currentToken); 
+        }
+      } catch (err) {
+        console.error("JWT fetch failed:", err);
+      }
+    }
+
+    if (!userId || !currentToken) return;
+
     try {
       setLoading(true);
       
-      const [artworksData, salesData] = await Promise.all([
-        apiService.getArtworks({ userId: userId }),
-        apiService.getMyOrders(email),
+      const [artworksData,salesData,category] = await Promise.all([
+        apiService.getMyArtworks({ userId: userId }, currentToken), 
+        apiService.getSalesHistory(artistId,currentToken),
+        apiService.getCategory()
       ]);
 
       if (artworksData?.success && artworksData.data) {
@@ -1053,52 +1010,29 @@ export default function ArtistDashboard() {
       } else {
         setArtworks([]);
       }
-
       if (salesData?.success && salesData.data) {
         setSales(salesData.data);
       } else {
         setSales([]);
       }
+      if(category?.success && category.data)
+      {
+        setCategories(category.data);
+      }
+      else setCategories([]);
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       toast.error(error.message || "Failed to load dashboard statistics.");
       setArtworks([]);
       setSales([]);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
   };
+
   loadDashboardData();
-}, [userId,toast,email]);
-const artistId = session?.user?.id; 
-const [salesLoading, setSalesLoading] = useState(true);
-const [totalEarnings, setTotalEarnings] = useState(0);
-// অথবা আপনার সিস্টেমে যেভাবে আর্টিস্ট আইডি ডিফাইন করা আছে
-
-useEffect(() => {
-  if (!artistId) return;
-
-  const fetchSalesHistory = async () => {
-    try {
-      setSalesLoading(true);
-      
-      // ব্যাকএন্ডের নতুন রাউটে আর্টিস্ট আইডি পাঠানো হচ্ছে
-      const res = await fetch(`${BASE_URL}/sales-history?artistId=${artistId}`);
-      const result = await res.json();
-
-      if (result.success) {
-        setSales(result.data || []);
-        setTotalEarnings(result.totalEarnings || 0); // টোটাল ইনকামও সেট করে নিলাম
-      }
-    } catch (err) {
-      console.error("Failed to fetch sales history:", err);
-    } finally {
-      setSalesLoading(false);
-    }
-  };
-
-  fetchSalesHistory();
-}, [artistId]);
+}, [userId, toast,token,artistId]);
 
 console.log("Sales Data:", sales);
   const totalSpentOrEarned = artworks.reduce(
@@ -1123,7 +1057,7 @@ console.log("Sales Data:", sales);
       </div>
     );
   }
-
+// console.log('cat:',categories);
   return (
     <div className="min-h-screen bg-[#070B13] text-gray-100 font-sans">
       {/* ── DESKTOP LAYOUT ── */}
@@ -1225,6 +1159,7 @@ console.log("Sales Data:", sales);
                     setArtworks={setArtworks}
                     setActiveTab={setActiveTab}
                     showToast={showToast}
+                    categories={categories}
                   />
                 )}
                 {activeTab === "add" && (
@@ -1234,6 +1169,7 @@ console.log("Sales Data:", sales);
                     showToast={showToast}
                     userId={userId}
                     userName={user?.name}
+                    categories={categories}
                   />
                 )}
                 {activeTab === "sales" && <SalesHistory sales={sales} />}

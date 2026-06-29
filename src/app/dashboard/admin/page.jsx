@@ -20,42 +20,10 @@ import {
   Loader2,
   Check,
 } from "lucide-react";
-import { useSession } from "@/lib/auth-client";
+import { authClient, useSession } from "@/lib/auth-client";
 import { redirect, useRouter } from "next/navigation";
 import { apiService } from "@/lib/api";
 import { toast } from "react-hot-toast";
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const orders = [
-  {
-    id: "TXN98321",
-    type: "purchase",
-    email: "lucas@gmail.com",
-    amount: 520,
-    date: "Nov 22, 2024",
-  },
-  {
-    id: "TXN98450",
-    type: "subscription",
-    email: "robin@gmail.com",
-    amount: 29,
-    date: "Nov 28, 2024",
-  },
-  {
-    id: "TXN98612",
-    type: "purchase",
-    email: "arjun@gmail.com",
-    amount: 640,
-    date: "Dec 4, 2024",
-  },
-  {
-    id: "TXN98701",
-    type: "subscription",
-    email: "hamid@gmail.com",
-    amount: 29,
-    date: "Dec 10, 2024",
-  },
-];
 
 const MONTHLY_SALES = [
   { month: "Jan", amount: 450 },
@@ -86,30 +54,55 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [orders,setOrders]=useState([]);
   const [artworks, setArtworks] = useState([]);
+    const [token, setToken] = useState(null);
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const router = useRouter();
 
   // Load Initial Data using apiService
-  useEffect(() => {
-    const reload = async () => {
-      try {
-        const [allUser, allArtworks,allOrders] = await Promise.all([
-          apiService.getUser(), // Calling your centralized users/reviews route handler
-          apiService.getArtworks(), // Calling your centralized artworks route handler
-          apiService.getAllOrders(),
-        ]);
+ useEffect(() => {
+  const reload = async () => {
+    let currentToken = token;
 
-        if (allUser.success) setUsers(allUser.data);
-        if (allArtworks.success) setArtworks(allArtworks.data);
-        if(allOrders.success) setOrders(allOrders.data);
-      } catch (error) {
-        console.error("Fetch failed:", error);
-        toast.error("Failed to fetch administrative collections.");
+    if (!currentToken) {
+      try {
+        const res = await authClient.getJWT();
+        if (res?.data?.token) {
+          currentToken = res.data.token;
+          setToken(currentToken); 
+        }
+      } catch (err) {
+        console.error("JWT fetch failed:", err);
       }
-    };
-    reload();
-  }, []);
+    }
+
+    if (!currentToken) {
+      console.warn("Admin Dashboard: No active token found.");
+      return;
+    }
+
+    console.log('Active token for API calls:', currentToken);
+
+    try {
+      const [allUser, allArtworks, allOrders] = await Promise.all([
+        apiService.getUser(currentToken), 
+        apiService.getArtworks(),
+        apiService.getAllOrders(currentToken),
+      ]);
+
+      if (allUser?.success) setUsers(allUser.data);
+      if (allArtworks?.success) setArtworks(allArtworks.data);
+      if (allOrders?.success) setOrders(allOrders.data);
+
+    } catch (error) {
+      console.error("Fetch failed:", error);
+      toast.error("Failed to fetch administrative collections.");
+    }
+  };
+
+  reload();
+}, [token]);
+
 console.log('orders:',orders);
   // Data Computations (Variables completely unchanged)
   const totaArtworks = artworks.length;

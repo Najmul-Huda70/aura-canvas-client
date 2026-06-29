@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PlusCircle, Upload, Loader2, ImageIcon, RotateCcw } from "lucide-react";
 
 const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMGBB_API;
-const CATEGORIES = ["Landscape", "Abstract", "Watercolor", "Oil", "Portrait", "Digital", "Sculpture", "Photography"];
 const BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL;
-
+const fadeIn = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0 }
+};
 async function uploadToImgBB(file) {
   const formData = new FormData();
   formData.append("image", file);
@@ -88,30 +90,21 @@ function LocalImageUploadZone({ onUpload, previewUrl, setPreviewUrl }) {
     </div>
   );
 }
-
-export default function AddArtwork({ setArtworks, setActiveTab, showToast, userId,userName }) {
+export default function AddArtwork({ 
+  setArtworks, 
+  setActiveTab, 
+  showToast, 
+  categories = [], 
+  userId, 
+  userName 
+}) {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-const [categories, setCategories] = useState([]);
-  useEffect(() => {
-    fetch(`${BASE_URL}/category`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && Array.isArray(data.data)) {
-          setCategories(data.data);
-        } else if (Array.isArray(data)) {
-          setCategories(data);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching categories:", error);
-      });
-  }, []);
-  console.log("category:", categories);
+
   const handlePublishArtwork = async (e) => {
     e.preventDefault();
     
@@ -130,7 +123,7 @@ const [categories, setCategories] = useState([]);
         category: category,
         imageUrl: imageUrl,
         artistId: userId,
-        artistName:userName
+        artistName: userName
       };
 
       const res = await fetch(`${BASE_URL}/artworks`, {
@@ -143,7 +136,7 @@ const [categories, setCategories] = useState([]);
 
       if (res.ok && resData.success) {
         const newlyCreated = {
-          _id: resData.artworkId || resData.data?._id, 
+          _id: resData.artworkId || resData.data?._id || Date.now().toString(), 
           ...payload,
           status: "pending"
         };
@@ -165,7 +158,12 @@ const [categories, setCategories] = useState([]);
   const inputClass = "w-full bg-[#070B13] border border-gray-800/80 focus:border-[#C5A880]/40 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none transition-colors";
 
   return (
-    <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-xl">
+    <motion.div 
+      initial="hidden" 
+      animate="visible" 
+      variants={fadeIn}
+      className="space-y-6 max-w-xl"
+    >
       <div>
         <h2 className="text-xl font-medium text-gray-100">Add New Artwork</h2>
         <p className="text-xs text-gray-500">Publish your latest masterpiece to the marketplace</p>
@@ -174,7 +172,7 @@ const [categories, setCategories] = useState([]);
       <div className="border border-gray-800 bg-[#090E17]/50 p-5 rounded-xl">
         <form onSubmit={handlePublishArtwork} className="space-y-4">
           <div>
-            <label className="block text-[11px] text-gray-400 mb-1.5">Artwork Title</label>
+            <label className="block text-[11px] text-gray-400 mb-1.5">Artwork Title *</label>
             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter title" className={inputClass} />
           </div>
           
@@ -185,20 +183,24 @@ const [categories, setCategories] = useState([]);
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] text-gray-400 mb-1.5">Price ($ USD)</label>
+              <label className="block text-[11px] text-gray-400 mb-1.5">Price ($ USD) *</label>
               <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="Price" className={inputClass} />
             </div>
             <div>
-              <label className="block text-[11px] text-gray-400 mb-1.5">Category</label>
+              <label className="block text-[11px] text-gray-400 mb-1.5">Category *</label>
               <select value={category} onChange={e => setCategory(e.target.value)} className={inputClass}>
                 <option value="">Select Category</option>
-                {categories.map((c,index)=> <option key={index} value={c.slug}>{c.name}</option>)}
+                {Array.isArray(categories) && categories.map((c, index) => (
+                  <option key={c._id || index} value={c.slug}>
+                    {c.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] text-gray-400 mb-1.5">Upload Image</label>
+            <label className="block text-[11px] text-gray-400 mb-1.5">Upload Image *</label>
             <LocalImageUploadZone onUpload={setImageUrl} previewUrl={imageUrl} setPreviewUrl={setImageUrl} />
           </div>
 
