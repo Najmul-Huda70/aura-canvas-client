@@ -30,7 +30,15 @@ export const auth = betterAuth({
     session: {
         expiresIn: 60 * 60 * 24 * 7, // 7 days
          },
-          plugins: [
+        
+  plugins: [
         jwt(), 
-    ]
+    ],
+    advanced: {
+        useCrossSubdomainCookie: true
+    },
+    cookie: {
+        secure: true, 
+        sameSite: "none", 
+    }
 });
