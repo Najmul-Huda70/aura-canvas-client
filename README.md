@@ -1,37 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Aura Canvas
 
-## Getting Started
+A sleek and robust MERN-stack platform designed for artists to showcase their creativity and art enthusiasts to purchase premium artwork and subscriptions. Built with a decoupled architecture utilizing a Next.js frontend and an Express.js backend, seamlessly connected via high-performance API proxies.
 
-First, run the development server:
+---
 
+## Live URL
+* **Frontend (UI):** [https://aura-canvas-client.vercel.app](https://aura-canvas-client.vercel.app)
+* **Backend (API Gateway):** [https://aura-canvas-server.onrender.com](https://aura-canvas-server.onrender.com)
+
+---
+
+## Project Purpose
+**Aura Canvas** bridges the gap between digital/physical art creators and collectors. The primary objective is to build a highly secure, lightning-fast web application where users can discover artwork, artists can manage their sales dashboard, and payments are securely handled without facing modern cross-domain security (CORS) bottlenecks.
+
+---
+
+## Key Features
+
+* **Advanced Decoupled Architecture:** Utilizes Next.js `rewrites` to proxy client-side requests (`/api/*`) directly to an isolated Express backend, eliminating standard multi-origin CORS errors.
+* **Hybrid Authentication (Better-Auth + JWT):** Secure authentication managed via **Better-Auth** with token-based session tracking integrated smoothly inside Next.js edge-friendly Middleware.
+* **Role-Based Protected Dashboards:** Granular route protection separating view configurations for Admin, Artist, and standard Users (`/dashboard/:path*`).
+* **Interactive Art Gallery & Browsing:** dynamic data-fetching routes allowing seamless filtering, pagination, and structural rendering of individual artworks.
+* **Secure Checkout Flows:** Dedicated payment pathways supporting artwork checkouts and dynamic tiered subscription modeling.payment system stripe.
+
+---
+
+## Tech Stack & NPM Packages Used
+
+### Frontend (Next.js Client)
+| Package | Purpose |
+| :--- | :--- |
+| `next` | Production React framework for server-side rendering and routing |
+| `better-auth` | Core authentication engine client |
+| `react` / `react-dom` | UI foundation layer |
+
+### ⚡ Backend (Express Server)
+| Package | Purpose |
+| :--- | :--- |
+| `express` | Fast, minimalist web framework for node endpoints |
+| `better-auth` | Server-side authentication handler and schema provider |
+| `cors` | Fallback cross-origin resource sharing layer (scoped exclusively) |
+| `mongodb` / `mongoose` | Object Data Modeling (ODM) for database management |
+
+---
+
+## Installation and Setup
+
+### 1. Clone the Repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# aura-canvas-client
+git clone [https://github.com/Najmul-Huda70/aura-canvas-client.git](https://github.com/Najmul-Huda70/aura-canvas-client.git)
+cd aura-canvas-client
