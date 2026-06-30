@@ -1,52 +1,135 @@
-# Aura Canvas
+# Aura Canvas – Online Art Marketplace
 
-A sleek and robust MERN-stack platform designed for artists to showcase their creativity and art enthusiasts to purchase premium artwork and subscriptions. Built with a decoupled architecture utilizing a Next.js frontend and an Express.js backend, seamlessly connected via high-performance API proxies.
-
----
-
-## Live URL
-* **Frontend (UI):** [https://aura-canvas-client.vercel.app](https://aura-canvas-client.vercel.app)
-* **Backend (API Gateway):** [https://aura-canvas-server.onrender.com](https://aura-canvas-server.onrender.com)
+Aura Canvas is a full-stack digital platform that connects art lovers, collectors, and buyers with talented artists. The platform allows users to browse, discover, and purchase original artworks, while artists can upload and manage their creations, and an admin oversees the entire system.
 
 ---
 
-## Project Purpose
-**Aura Canvas** bridges the gap between digital/physical art creators and collectors. The primary objective is to build a highly secure, lightning-fast web application where users can discover artwork, artists can manage their sales dashboard, and payments are securely handled without facing modern cross-domain security (CORS) bottlenecks.
+## Live Site
+
+**Live URL:** [https://aura-canvas-client.vercel.app](https://aura-canvas-client.vercel.app)
+
+**Backend (API Gateway):** [https://aura-canvas-server.onrender.com](https://aura-canvas-server.onrender.com)
+
+**GitHub Repository (Client):** [https://github.com/Najmul-Huda70/aura-canvas-client](https://github.com/Najmul-Huda70/aura-canvas-client)
+
+**GitHub Repository (Server):** [https://github.com/Najmul-Huda70/aura-canvas-server](https://github.com/Najmul-Huda70/aura-canvas-server)
+
+**Admin Credentials:**
+- Email: `admin@arthub.com`
+- Password: `Admin@123`
+
+---
+
+## Purpose
+
+Traditional art buying is often limited to galleries or physical exhibitions. Aura Canvas democratizes access to art by enabling emerging artists to reach global audiences and providing buyers with a secure, streamlined purchase experience — all built on the MERN stack with role-based access control, Stripe payment integration, and interactive features like comments and analytics.
 
 ---
 
 ## Key Features
 
-* **Advanced Decoupled Architecture:** Utilizes Next.js `rewrites` to proxy client-side requests (`/api/*`) directly to an isolated Express backend, eliminating standard multi-origin CORS errors.
-* **Hybrid Authentication (Better-Auth + JWT):** Secure authentication managed via **Better-Auth** with token-based session tracking integrated smoothly inside Next.js edge-friendly Middleware.
-* **Role-Based Protected Dashboards:** Granular route protection separating view configurations for Admin, Artist, and standard Users (`/dashboard/:path*`).
-* **Interactive Art Gallery & Browsing:** dynamic data-fetching routes allowing seamless filtering, pagination, and structural rendering of individual artworks.
-* **Secure Checkout Flows:** Dedicated payment pathways supporting artwork checkouts and dynamic tiered subscription modeling.payment system stripe.
+### Authentication & Authorization
+- Email/password registration and login with JWT (7-day expiry)
+- Google OAuth login via BetterAuth
+- Role-based access control: **User (Buyer)**, **Artist**, **Admin**
+- Persistent login across page reloads (no false redirects on private routes)
+
+### Public Pages
+- Animated hero banner with carousel/slider
+- Featured Artworks section (auto-refreshing latest 6 artworks)
+- Top Artists section (top 3 by sales)
+- Art Categories grid with filter linking
+- Browse Artworks page with search, category & price-range filters, sorting, and pagination
+- Artwork Details page with high-resolution images, artist info, and purchase/comment actions
+
+### Buyer (User) Dashboard
+- Purchase history table
+- Gallery of bought artworks
+- Profile management
+- Subscription tiers: Free (3 purchases), Pro ($9.99 – 9 purchases), Premium ($19.99 – unlimited)
+- Comment system on purchased artworks (edit/delete own comments)
+
+### Artist Dashboard
+- Full CRUD on own artworks (create, edit, delete) with image upload
+- Sales history table (buyer, date, amount)
+- Profile management
+
+### Admin Dashboard
+- Manage users (role updates)
+- Manage all artworks (delete)
+- View all platform transactions (purchases + subscriptions)
+- Analytics overview cards (total users, artists, artworks sold, revenue)
+- Sales chart & category-wise pie chart
+
+### Payments
+- Stripe Checkout for artwork purchases
+- Stripe Checkout for subscription upgrades (Pro/Premium)
+- Subscription-tier-based purchase limit validation
+- "Sold" badge with automatic artwork unpublishing after purchase
+
+### UX & Reliability
+- Global loading spinner and skeleton loaders
+- Custom 404 error page
+- Error boundary fallback UI
+- Toast notifications for API errors
+- Fully responsive design (mobile, tablet, desktop)
+- No CORS / 404 / 504 errors on production
+- No broken state on page reload from any route
 
 ---
 
-## Tech Stack & NPM Packages Used
+## Tech Stack
 
-### Frontend (Next.js Client)
-| Package | Purpose |
-| :--- | :--- |
-| `next` | Production React framework for server-side rendering and routing |
-| `better-auth` | Core authentication engine client |
-| `react` / `react-dom` | UI foundation layer |
-
-### ⚡ Backend (Express Server)
-| Package | Purpose |
-| :--- | :--- |
-| `express` | Fast, minimalist web framework for node endpoints |
-| `better-auth` | Server-side authentication handler and schema provider |
-| `cors` | Fallback cross-origin resource sharing layer (scoped exclusively) |
-| `mongodb` / `mongoose` | Object Data Modeling (ODM) for database management |
+**Frontend:** Next.js, React, Tailwind CSS
+**Backend:** Node.js, Express.js
+**Database:** MongoDB (Mongoose)
+**Authentication:** JWT, BetterAuth (Google OAuth)
+**Payments:** Stripe
+**Image Hosting:** imgBB API
 
 ---
 
-## Installation and Setup
+## NPM Packages Used
 
-### 1. Clone the Repository
-```bash
-git clone [https://github.com/Najmul-Huda70/aura-canvas-client.git](https://github.com/Najmul-Huda70/aura-canvas-client.git)
-cd aura-canvas-client
+### Client (Next.js)
+| Package | Purpose |
+|---|---|
+| `next` | React framework (SSR/routing) |
+| `react`, `react-dom` | UI library |
+| `better-auth` | Authentication (email/password + Google OAuth) |
+| `axios` | HTTP client for API requests |
+| `tailwindcss` | Utility-first CSS styling |
+| `react-hot-toast` | Toast notifications |
+| `recharts` | Charts for admin analytics |
+| `swiper` | Hero banner carousel/slider |
+| `lucide-react` | Icon library |
+| `next-themes` | Dark mode toggle |
+| `@stripe/stripe-js` | Stripe Checkout integration (client) |
+| `jose` | JWT decoding/verification on client |
+| `framer-motion` | UI animations |
+
+### Server (Express.js)
+| Package | Purpose |
+|---|---|
+| `express` | Web server framework |
+| `mongodb` | Database driver/ODM |
+| `cors` | Cross-origin resource sharing |
+| `dotenv` | Environment variable management |
+| `jose-cjs` | JWT verification via JWKS |
+| `jsonwebtoken` | JWT signing/verification |
+| `bcrypt` | Password hashing |
+| `stripe` | Stripe payment processing (server) |
+
+---
+
+## Environment Variables
+
+Both client and server require `.env` files for sensitive configuration (MongoDB URI, JWT secrets, Stripe keys, imgBB API key). These are excluded from version control via `.gitignore` and configured separately in the deployment platforms (Vercel for client, Render for server).
+
+---
+
+## Deployment
+
+- **Frontend:** Deployed on [Vercel](https://vercel.com)
+- **Backend:** Deployed on [Render](https://render.com)
+- **Database:** MongoDB Atlas
