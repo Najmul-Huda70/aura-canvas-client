@@ -10,19 +10,11 @@ Aura Canvas is a full-stack digital platform that connects art lovers, collector
 
 **Backend (API Gateway):** [https://aura-canvas-server.onrender.com](https://aura-canvas-server.onrender.com)
 
-**GitHub Repository (Client):** [https://github.com/Najmul-Huda70/aura-canvas-client](https://github.com/Najmul-Huda70/aura-canvas-client)
+## GitHub Repository
 
-**GitHub Repository (Server):** [https://github.com/Najmul-Huda70/aura-canvas-server](https://github.com/Najmul-Huda70/aura-canvas-server)
+**Client :** [https://github.com/Najmul-Huda70/aura-canvas-client](https://github.com/Najmul-Huda70/aura-canvas-client)
 
-**Admin Credentials:**
-- Email: `admin@arthub.com`
-- Password: `Admin@123`
-
----
-
-## Purpose
-
-Traditional art buying is often limited to galleries or physical exhibitions. Aura Canvas democratizes access to art by enabling emerging artists to reach global audiences and providing buyers with a secure, streamlined purchase experience — all built on the MERN stack with role-based access control, Stripe payment integration, and interactive features like comments and analytics.
+**Server:** [https://github.com/Najmul-Huda70/aura-canvas-server](https://github.com/Najmul-Huda70/aura-canvas-server)
 
 ---
 
@@ -133,3 +125,10 @@ Both client and server require `.env` files for sensitive configuration (MongoDB
 - **Frontend:** Deployed on [Vercel](https://vercel.com)
 - **Backend:** Deployed on [Render](https://render.com)
 - **Database:** MongoDB Atlas
+
+## Installation and Setup
+
+### 1. Clone the Repository
+```bash
+git clone [https://github.com/Najmul-Huda70/aura-canvas-client.git](https://github.com/Najmul-Huda70/aura-canvas-client.git)
+cd aura-canvas-client
