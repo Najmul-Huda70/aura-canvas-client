@@ -92,7 +92,13 @@ export default function LoginPage() {
       toast.error(err.message || "An unexpected error occurred");
     }
   };
-
+const handleGoogleLogin = async () => {
+    await signIn.social({
+      provider: "google",
+      // callbackURL: "/", 
+    });
+    router.push('/');
+  };
   return (
     <div className="min-h-screen mt-10 flex items-center justify-center bg-[#FDFBF7] dark:bg-[#0B0F19] text-[#1A1A1A] dark:text-[#F3F4F6] px-4 transition-colors duration-300 font-sans">
       <motion.div
@@ -199,7 +205,7 @@ export default function LoginPage() {
 
         {/* Unified Native Google OAuth alternative connection node asset */}
         <button
-          type="button"
+          onClick={handleGoogleLogin}
           className="w-full py-2.5 flex items-center justify-center gap-3 bg-transparent border border-gray-200 dark:border-gray-800 text-sm font-medium hover:bg-gray-50 dark:hover:bg-[#1F2937]/40 transition-colors rounded-sm"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">

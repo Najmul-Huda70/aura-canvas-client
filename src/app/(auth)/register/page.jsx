@@ -12,7 +12,7 @@ import {
   Paintbrush,
   ShoppingBag,
 } from "lucide-react";
-import { signUp } from "@/lib/auth-client"; // Better-Auth client instance
+import { signIn, signUp } from "@/lib/auth-client"; // Better-Auth client instance
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
@@ -26,11 +26,11 @@ export default function RegisterPage() {
       transition: { duration: 0.6, ease: "easeOut" },
     },
   };
-  const router=useRouter();
+  const router = useRouter();
   // Password hide/show layout states
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
-  
+
   // Clean single object instance mapping state values
   const [formData, setFormData] = useState({
     name: "",
@@ -53,12 +53,14 @@ export default function RegisterPage() {
     let errorMsg = "";
 
     if (name === "name") {
-      if (value.trim().length < 3) errorMsg = "Name must be at least 3 characters.";
+      if (value.trim().length < 3)
+        errorMsg = "Name must be at least 3 characters.";
     }
 
     if (name === "email") {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) errorMsg = "Please enter a valid email address.";
+      if (!emailRegex.test(value))
+        errorMsg = "Please enter a valid email address.";
     }
 
     // Modern strict structural validation rules for security compliance
@@ -72,7 +74,8 @@ export default function RegisterPage() {
       } else if (!/[0-9]/.test(value)) {
         errorMsg = "Password must contain at least one number (0-9).";
       } else if (!/[@$!%*?&]/.test(value)) {
-        errorMsg = "Password must contain at least one special character (e.g., @$!%*?&).";
+        errorMsg =
+          "Password must contain at least one special character (e.g., @$!%*?&).";
       }
     }
 
@@ -84,7 +87,8 @@ export default function RegisterPage() {
     if (name === "password" && formData.confirmPassword) {
       setErrors((prev) => ({
         ...prev,
-        confirmPassword: value === formData.confirmPassword ? "" : "Passwords do not match.",
+        confirmPassword:
+          value === formData.confirmPassword ? "" : "Passwords do not match.",
       }));
     }
 
@@ -131,7 +135,7 @@ export default function RegisterPage() {
 
     const { name, email, password, role } = formData;
     try {
-      const plan=role==="user" ? "user_free" :"artist_free";
+      const plan = role === "user" ? "user_free" : "artist_free";
       const { error } = await signUp.email({
         name: name,
         email: email,
@@ -139,21 +143,39 @@ export default function RegisterPage() {
         // Programmatic fallback configuration linking unique placeholder avatars using DiceBear SVG profiles
         image: `https://api.dicebear.com/10.x/initials/svg?seed=${encodeURIComponent(name)}`,
         role: role || "user",
-        plan:plan
+        plan: plan,
         // callbackURL: "/login",
       });
-      
+
       if (error) {
         toast.error(error.message || "Registration failed!");
         return;
       }
       toast.success("Account created successfully!");
-      router.push('/login');
+      router.push("/login");
     } catch (err) {
       toast.error(err.message || "An unexpected error occurred");
     }
   };
+ const GoogleSignUp = async (e) => {
+  e.preventDefault();
+  try {
+    const { error } = await signIn.social({
+      provider: "google",
+      additionalData: {
+        role: formData.role, 
+      },
+      // callbackURL: "/login",
+    });
 
+    if (error) {
+      toast.error(error.message || "Authentication failed");
+    }
+    router.push('/login');
+  } catch (error) {
+    toast.error(error.message || "An unexpected error occurred");
+  }
+};
   return (
     <div className="min-h-screen  mt-10 flex items-center justify-center bg-[#FDFBF7] dark:bg-[#0B0F19] text-[#1A1A1A] dark:text-[#F3F4F6] px-4 py-20 transition-colors duration-300 font-sans">
       <motion.div
@@ -245,11 +267,17 @@ export default function RegisterPage() {
                 value={formData.name}
                 onChange={handleChange}
                 className={`w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 dark:bg-[#1F2937]/40 border ${
-                  errors.name ? "border-red-500 focus:border-red-500" : "border-gray-200 dark:border-gray-800 focus:border-[#C5A880]"
+                  errors.name
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-gray-200 dark:border-gray-800 focus:border-[#C5A880]"
                 } focus:outline-none transition-colors rounded-sm`}
               />
             </div>
-            {errors.name && <p className="text-red-500 text-xs mt-1 font-medium">{errors.name}</p>}
+            {errors.name && (
+              <p className="text-red-500 text-xs mt-1 font-medium">
+                {errors.name}
+              </p>
+            )}
           </div>
 
           {/* Email Address input block container layout */}
@@ -269,11 +297,17 @@ export default function RegisterPage() {
                 value={formData.email}
                 onChange={handleChange}
                 className={`w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 dark:bg-[#1F2937]/40 border ${
-                  errors.email ? "border-red-500 focus:border-red-500" : "border-gray-200 dark:border-gray-800 focus:border-[#C5A880]"
+                  errors.email
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-gray-200 dark:border-gray-800 focus:border-[#C5A880]"
                 } focus:outline-none transition-colors rounded-sm`}
               />
             </div>
-            {errors.email && <p className="text-red-500 text-xs mt-1 font-medium">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-red-500 text-xs mt-1 font-medium">
+                {errors.email}
+              </p>
+            )}
           </div>
 
           {/* Primary Security Password Input field layer configuration */}
@@ -293,7 +327,9 @@ export default function RegisterPage() {
                 value={formData.password}
                 onChange={handleChange}
                 className={`w-full pl-10 pr-10 py-2.5 text-sm bg-gray-50 dark:bg-[#1F2937]/40 border ${
-                  errors.password ? "border-red-500 focus:border-red-500" : "border-gray-200 dark:border-gray-800 focus:border-[#C5A880]"
+                  errors.password
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-gray-200 dark:border-gray-800 focus:border-[#C5A880]"
                 } focus:outline-none transition-colors rounded-sm`}
               />
               <button
@@ -304,7 +340,11 @@ export default function RegisterPage() {
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            {errors.password && <p className="text-red-500 text-xs mt-1 font-medium">{errors.password}</p>}
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1 font-medium">
+                {errors.password}
+              </p>
+            )}
           </div>
 
           {/* Verification Confirm Password input verification block layout */}
@@ -324,7 +364,9 @@ export default function RegisterPage() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 className={`w-full pl-10 pr-10 py-2.5 text-sm bg-gray-50 dark:bg-[#1F2937]/40 border ${
-                  errors.confirmPassword ? "border-red-500 focus:border-red-500" : "border-gray-200 dark:border-gray-800 focus:border-[#C5A880]"
+                  errors.confirmPassword
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-gray-200 dark:border-gray-800 focus:border-[#C5A880]"
                 } focus:outline-none transition-colors rounded-sm`}
               />
               <button
@@ -335,7 +377,11 @@ export default function RegisterPage() {
                 {showConfirmPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            {errors.confirmPassword && <p className="text-red-500 text-xs mt-1 font-medium">{errors.confirmPassword}</p>}
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-xs mt-1 font-medium">
+                {errors.confirmPassword}
+              </p>
+            )}
           </div>
 
           {/* Master Form Trigger Execution action button element wrapper */}
@@ -364,7 +410,7 @@ export default function RegisterPage() {
 
         {/* Integrated Native Google Authentication Provider click entry handler layer */}
         <button
-          type="button"
+          onClick={GoogleSignUp}
           className="w-full py-2.5 flex items-center justify-center gap-3 bg-transparent border border-gray-200 dark:border-gray-800 text-sm font-medium hover:bg-gray-50 dark:hover:bg-[#1F2937]/40 transition-colors rounded-sm"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
